@@ -35,6 +35,7 @@ class EmployeeLeaveModel implements Normalizable
      *     @OA\Property(property="date", type="string"),
      *     @OA\Property(property="lengthHours", type="string"),
      *     @OA\Property(property="lengthDays", type="string"),
+     *     @OA\Property(property="googleEventId", type="string"),
      *     @OA\Property(
      *         property="status",
      *         type="object",
@@ -82,6 +83,7 @@ class EmployeeLeaveModel implements Normalizable
                 ['getDecorator', 'getEndTime'],
                 'durationType',
                 ['getDecorator', 'getLeaveDuration'],
+                'googleEventId'
             ]
         );
         $this->setAttributeNames(
@@ -100,6 +102,7 @@ class EmployeeLeaveModel implements Normalizable
                 'endTime',
                 ['durationType', 'id'],
                 ['durationType', 'type'],
+                'googleEventId'
             ]
         );
     }

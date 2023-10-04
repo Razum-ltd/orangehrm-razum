@@ -140,6 +140,14 @@ class Leave
      */
     private iterable $leaveLeaveEntitlements;
 
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="google_event_id", type="string", length=255, nullable=true)
+     */
+    private string $googleEventId;
+
     public function __construct()
     {
         $this->leaveLeaveEntitlements = new ArrayCollection();
@@ -319,5 +327,24 @@ class Leave
     public function setDurationType(int $durationType): void
     {
         $this->durationType = $durationType;
+    }
+
+    /**
+     * @return string
+     */
+    public function getGoogleEventId(): string
+    {
+        return $this->googleEventId;
+    }
+
+    /**
+     * @param string $googleEventId
+     * @return Leave
+     */
+    public function setGoogleEventId(string $googleEventId)
+    {
+        $this->googleEventId = $googleEventId;
+
+        return $this;
     }
 }
