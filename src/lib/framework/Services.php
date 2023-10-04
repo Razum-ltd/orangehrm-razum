@@ -441,4 +441,13 @@ final class Services
      * @see \OrangeHRM\OAuth\Service\OAuthService
      */
     public const OAUTH_SERVICE = 'oauth.oauth_service';
+
+    ///////////////////////////////////////////////////////////////
+    /// Google plugin services
+    ///////////////////////////////////////////////////////////////
+
+    /**
+     * @see \OrangeHRM\Google\Service\CalendarService
+     */
+    public const CALENDAR_SERVICE = 'google.calendar_service';
 }
