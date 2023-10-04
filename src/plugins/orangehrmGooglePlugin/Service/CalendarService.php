@@ -4,7 +4,7 @@ namespace OrangeHRM\Google\Service;
 use Doctrine\ORM\EntityRepository;
 use OrangeHRM\Core\Traits\ORM\EntityManagerHelperTrait;
 use OrangeHRM\Entity\Leave;
-use OrangeHRM\Google\Api\Calendar\Events;
+use OrangeHRM\Google\CalendarAPIV3\Events;
 
 class CalendarService
 {
@@ -61,26 +61,19 @@ class CalendarService
      */
     private function checkIfGoogleEventHasCorrectData(&$leave, &$event)
     {
-        $eventNeedsToUpdate = false;
-        if ($leave->getDurationType() == Leave::DURATION_TYPE_FULL_DAY) {
-            if ($this->checkIfDatetimeContainsHours($event->getStart())) {
-                // update the event
-                $eventNeedsToUpdate = true;
-            }
-        } else {
-            if (!$this->checkIfDatetimeContainsHours($event->getStart())) {
-                // update the event
-                $eventNeedsToUpdate = true;
-            }
-        }
         $employee = $leave->getEmployee();
         $neededEventTitle = Events::CreateEventTitle($employee, $leave);
-        if ($event->getSummary() != $neededEventTitle) {
-            $eventNeedsToUpdate = true;
-            $event->setSummary($neededEventTitle);
-        }
 
-        if ($eventNeedsToUpdate) {
+        if (
+            // If the leave is a full day leave, the event should not contain hours
+            ($leave->getDurationType() == Leave::DURATION_TYPE_FULL_DAY && $this->checkIfDatetimeContainsHours($event->getStart())) ||
+            // If the leave is not a full day leave, the event should contain hours
+            ($leave->getDurationType() != Leave::DURATION_TYPE_FULL_DAY && !$this->checkIfDatetimeContainsHours($event->getStart())) ||
+            // If the event title is not correct, update it
+            ($event->getSummary() != $neededEventTitle)
+        ) {
+            $event->setSummary($neededEventTitle);
+            Events::SetEventTime($event, $leave);
             $this->googleEvents->update(Events::CALENDAR_LEAVE_ID, $event);
         }
     }
@@ -100,7 +93,7 @@ class CalendarService
     /**
      * @param Leave $leave
      */
-    private function createNewGoogleEventFromEmployeeLeave($leave)
+    private function createNewGoogleEventFromEmployeeLeave(&$leave)
     {
         $event = $this->googleEvents->createNewLeaveEvent($leave->getEmployee(), $leave);
         if ($event) {

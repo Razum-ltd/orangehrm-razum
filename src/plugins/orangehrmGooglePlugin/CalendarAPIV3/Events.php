@@ -1,5 +1,7 @@
 <?php
-namespace OrangeHRM\Google\Api\Calendar;
+namespace OrangeHRM\Google\CalendarAPIV3;
+
+use Google\Service\Calendar\EventDateTime;
 use OrangeHRM\Entity\Leave;
 
 class Events
@@ -113,18 +115,13 @@ class Events
             return;
         }
 
-        $event = $this->newEvent([
-            'title' => self::CreateEventTitle($employee, $leave),
-            'description' => $leave->getLeaveType()->getName(),
-            'start' => [
-                'dateTime' => $leave->getStartTime()->format('c'),
-                'timeZone' => 'Europe/Ljubljana',
-            ],
-            'end' => [
-                'dateTime' => $leave->getEndTime()->format('c'),
-                'timeZone' => 'Europe/Ljubljana',
-            ],
-        ]);
+        $event = $this->newEvent();
+        $event->setSummary(self::CreateEventTitle($employee, $leave));
+        $event->setDescription($leave->getLeaveType()->getName());
+        $event->setStatus(self::EVENT_STATUS_CONFIRMED);
+        $event->setVisibility(self::EVENT_VISIBILITY_PUBLIC);
+
+        self::SetEventTime($event, $leave);
 
         return $this->insert(self::CALENDAR_LEAVE_ID, $event);
     }
@@ -138,5 +135,20 @@ class Events
     public static function CreateEventTitle(&$employee, &$leave)
     {
         return $employee->getFirstName() . ' ' . $employee->getLastName() . ' - ' . $leave->getLeaveType()->getName();
+    }
+
+    /**
+     * @param \Google_Service_Calendar_Event $event
+     * @param \OrangeHRM\Entity\Leave $leave
+     */
+    public static function SetEventTime(&$event, &$leave)
+    {
+        if ($leave->getDurationType() == Leave::DURATION_TYPE_FULL_DAY) {
+            $event->setStart((new EventDateTime())->setDate($leave->getStartTime()->format('Y-m-d')));
+            $event->setEnd((new EventDateTime())->setDate($leave->getEndTime()->format('Y-m-d')));
+        } else {
+            $event->setStart((new EventDateTime())->setDateTime($leave->getStartTime()->format('Y-m-d H:i:s')));
+            $event->setEnd((new EventDateTime())->setDateTime($leave->getEndTime()->format('Y-m-d H:i:s')));
+        }
     }
 }

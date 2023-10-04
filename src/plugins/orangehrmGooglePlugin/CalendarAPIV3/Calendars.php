@@ -1,5 +1,5 @@
 <?php
-namespace OrangeHRM\Google\Api\Calendar;
+namespace OrangeHRM\Google\CalendarAPIV3;
 
 class Calendars
 {
