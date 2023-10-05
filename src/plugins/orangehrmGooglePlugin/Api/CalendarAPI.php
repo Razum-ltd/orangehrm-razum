@@ -2,6 +2,7 @@
 namespace OrangeHRM\Google\Api\Calendar;
 
 use OrangeHRM\Core\Api\V2\Endpoint;
+use OrangeHRM\Core\Api\V2\EndpointResourceResult;
 use OrangeHRM\Core\Api\V2\ResourceEndpoint;
 use OrangeHRM\Core\Traits\ServiceContainerTrait;
 use OrangeHRM\Google\Service\CalendarService;
@@ -21,13 +22,38 @@ class CalendarAPI extends Endpoint implements ResourceEndpoint
      * @OA\Get(
      *     path="/api/v2/google/calendar/sync",
      *     tags={"Google/Calendar"},
-     *     @OA\Response(response="200")
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 description="Message for the sync result",
+     *             ),
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="string",
+     *                 description="Message of the error",
+     *             ),
+     *         )
+     *     )
      * )
      * @inheritDoc
      */
-    public function getOne()
+    public function getOne(): EndpointResourceResult
     {
-        $this->getCalendarService()->syncEmployeeAbsence();
+        try {
+            $this->getCalendarService()->syncEmployeeAbsence();
+            return new EndpointResourceResult(ArrayModel::class, [
+                "message" => "Sync completed"
+            ]);
+        } catch (\Exception $error) {
+            return new EndpointResourceResult(ArrayModel::class, [
+                "message" => "Error during sync",
+                "error" => $error->getMessage()
+            ]);
+        }
     }
     public function delete()
     {
