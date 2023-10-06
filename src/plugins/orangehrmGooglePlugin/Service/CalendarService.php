@@ -35,22 +35,35 @@ class CalendarService
 
     public function syncEmployeeAbsence()
     {
-        foreach ($this->employeeLeaves as $employeeLeave) {
-            $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
-            // No google calendar event yet, create it.
-            if (!$googleEvent) {
-                // THe function check if the event should be created based on the leave status. This could be improved...
-                $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
-                continue;
+        $completed = [];
+        $errors = [];
+        try {
+            foreach ($this->employeeLeaves as $employeeLeave) {
+                $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
+                // No google calendar event yet, create it.
+                if (!$googleEvent) {
+                    // The function check if the event should be created based on the leave status. This could be improved...
+                    $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
+                    continue;
+                }
+                // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
+                if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
+                    $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
+                    continue;
+                }
+                // The event should be on the calendar, but is all the data correct?
+                $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
+                // The event is correct, add it to the completed array.
+                $employee = $employeeLeave->getEmployee();
+                $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
             }
-            // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
-            if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
-                $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
-                continue;
-            }
-            // The event should be on the calendar, but is all the data correct?
-            $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
+        } catch(\Exception $error) {
+            $errors[] = $error->getMessage();
         }
+        return [
+            'completed' => $completed,
+            'errors' => $errors
+        ];
     }
 
 
