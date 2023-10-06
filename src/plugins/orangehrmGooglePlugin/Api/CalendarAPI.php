@@ -1,23 +1,16 @@
 <?php
 namespace OrangeHRM\Google\Api\Calendar;
 
+use OrangeHRM\Core\Api\V2\CrudEndpoint;
 use OrangeHRM\Core\Api\V2\Endpoint;
 use OrangeHRM\Core\Api\V2\EndpointResourceResult;
-use OrangeHRM\Core\Api\V2\ResourceEndpoint;
-use OrangeHRM\Core\Traits\ServiceContainerTrait;
-use OrangeHRM\Google\Service\CalendarService;
+use OrangeHRM\Core\Api\V2\Validator\ParamRuleCollection;
+use OrangeHRM\Google\Traits\Service\CalendarServiceTrait;
 
-class CalendarAPI extends Endpoint implements ResourceEndpoint
+class CalendarAPI extends Endpoint implements CrudEndpoint
 {
-    use ServiceContainerTrait;
+    use CalendarServiceTrait;
 
-    /**
-     * @return CalendarService
-     */
-    private function getCalendarService()
-    {
-        return $this->getContainer()->get(Services::CALENDAR_SERVICE);
-    }
     /**
      * @OA\Get(
      *     path="/api/v2/google/calendar/sync",
@@ -41,13 +34,13 @@ class CalendarAPI extends Endpoint implements ResourceEndpoint
      * )
      * @inheritDoc
      */
-    public function getOne(): EndpointResourceResult
+    public function getAll(): EndpointResourceResult
     {
         try {
-            $this->getCalendarService()->syncEmployeeAbsence();
-            return new EndpointResourceResult(ArrayModel::class, [
-                "message" => "Sync completed"
-            ]);
+            return new EndpointResourceResult(
+                ArrayModel::class,
+                $this->getCalendarService()->syncEmployeeAbsence()
+            );
         } catch (\Exception $error) {
             return new EndpointResourceResult(ArrayModel::class, [
                 "message" => "Error during sync",
@@ -55,7 +48,33 @@ class CalendarAPI extends Endpoint implements ResourceEndpoint
             ]);
         }
     }
+
+    public function getValidationRuleForGetAll(): ParamRuleCollection
+    {
+        return new ParamRuleCollection();
+    }
+    public function getOne()
+    {
+        $this->getNotImplementedException();
+    }
+    public function getValidationRuleForGetOne()
+    {
+        $this->getNotImplementedException();
+    }
+    public function create()
+    {
+        $this->getNotImplementedException();
+    }
+    public function getValidationRuleForCreate()
+    {
+        $this->getNotImplementedException();
+    }
+
     public function delete()
+    {
+        $this->getNotImplementedException();
+    }
+    public function getValidationRuleForDelete()
     {
         $this->getNotImplementedException();
     }
@@ -63,16 +82,7 @@ class CalendarAPI extends Endpoint implements ResourceEndpoint
     {
         $this->getNotImplementedException();
     }
-
-    public function getValidationRuleForGetOne()
-    {
-        $this->getNotImplementedException();
-    }
     public function getValidationRuleForUpdate()
-    {
-        $this->getNotImplementedException();
-    }
-    public function getValidationRuleForDelete()
     {
         $this->getNotImplementedException();
     }
