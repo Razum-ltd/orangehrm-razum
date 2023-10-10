@@ -1,9 +1,13 @@
 <?php
-namespace OrangeHRM\Google\CalendarAPIV3;
+
+namespace OrangeHRM\Calendar\Api\Base;
+
+use OrangeHRM\Calendar\Traits\Api\GoogleCalendarServiceTrait;
+use Google_Service_Calendar_Calendar;
 
 class Calendars
 {
-    use CalendarServiceTrait;
+    use GoogleCalendarServiceTrait;
 
     /**
      * Clears a primary calendar. This operation deletes all events associated with the primary calendar of an account.
@@ -26,7 +30,7 @@ class Calendars
     /**
      * Returns metadata for a calendar.
      * @param string $calendarId
-     * @return \Google_Service_Calendar_Calendar
+     * @return Google_Service_Calendar_Calendar
      */
     public function get($calendarId)
     {
@@ -35,8 +39,8 @@ class Calendars
 
     /**
      * @param string $calendarId
-     * @param \Google_Service_Calendar_Calendar $calendar
-     * @return \Google_Service_Calendar_Calendar
+     * @param Google_Service_Calendar_Calendar $calendar
+     * @return Google_Service_Calendar_Calendar
      */
     public function update($calendarId, $calendar)
     {

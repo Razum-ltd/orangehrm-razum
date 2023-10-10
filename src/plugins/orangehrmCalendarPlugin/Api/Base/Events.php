@@ -1,25 +1,28 @@
 <?php
-namespace OrangeHRM\Google\CalendarAPIV3;
 
-use Google\Service\Calendar\EventDateTime;
+namespace OrangeHRM\Calendar\Api\Base;
+
 use OrangeHRM\Entity\Leave;
+use OrangeHRM\Entity\Employee;
+use OrangeHRM\Calendar\Traits\Api\GoogleCalendarServiceTrait;
+use Google\Service\Calendar\EventDateTime;
+use Google_Service_Calendar_Event;
 
 class Events
 {
-    const CALENDAR_LEAVE_ID = 'primary';
-    const EVENT_STATUS_CONFIRMED = 'confirmed';
-    const EVENT_STATUS_TENTATIVE = 'tentative';
-    const EVENT_STATUS_CANCELLED = 'cancelled';
-    const EVENT_VISIBILITY_DEFAULT = 'default';
-    const EVENT_VISIBILITY_PUBLIC = 'public';
-    const EVENT_VISIBILITY_PRIVATE = 'private';
-    const EVENT_VISIBILITY_CONFIDENTIAL = 'confidential';
-
-    use CalendarServiceTrait;
+    use GoogleCalendarServiceTrait;
+    public const CALENDAR_LEAVE_ID = 'primary';
+    public const EVENT_STATUS_CONFIRMED = 'confirmed';
+    public const EVENT_STATUS_TENTATIVE = 'tentative';
+    public const EVENT_STATUS_CANCELLED = 'cancelled';
+    public const EVENT_VISIBILITY_DEFAULT = 'default';
+    public const EVENT_VISIBILITY_PUBLIC = 'public';
+    public const EVENT_VISIBILITY_PRIVATE = 'private';
+    public const EVENT_VISIBILITY_CONFIDENTIAL = 'confidential';
 
     /**
      * @param $options
-     * @return \Google_Service_Calendar_Event
+     * @return Google_Service_Calendar_Event
      */
     private function newEvent(
         $options = [
@@ -30,7 +33,7 @@ class Events
             'status' => 'confirmed'
         ]
     ) {
-        $event = new \Google_Service_Calendar_Event();
+        $event = new Google_Service_Calendar_Event();
         $event->setSummary($options['title']);
         $event->setDescription($options['description']);
         $event->setStatus($options['status']);
@@ -44,7 +47,7 @@ class Events
     /**
      * @param string $calendarId
      * @param string $eventId
-     * @return \Google_Service_Calendar_Event
+     * @return Google_Service_Calendar_Event
      */
     public function get($calendarId, $eventId)
     {
@@ -64,7 +67,7 @@ class Events
     /**
      * @param string $calendarId
      * @param array $optParams
-     * @return \Google_Service_Calendar_Event[]
+     * @return Google_Service_Calendar_Event[]
      */
     public function list($calendarId, $optParams = [])
     {
@@ -75,7 +78,7 @@ class Events
             $events = array_merge($events, $list->getItems());
             $pageToken = $list->getNextPageToken();
             if ($pageToken) {
-                $optParams = array('pageToken' => $pageToken);
+                $optParams = ['pageToken' => $pageToken];
                 $list = $this->getCalendarService()->events->listEvents($calendarId, $optParams);
             } else {
                 break;
@@ -86,8 +89,8 @@ class Events
 
     /**
      * @param string $calendarId
-     * @param \Google_Service_Calendar_Event $event
-     * @return \Google_Service_Calendar_Event
+     * @param Google_Service_Calendar_Event $event
+     * @return Google_Service_Calendar_Event
      */
     public function insert($calendarId, $event)
     {
@@ -96,8 +99,8 @@ class Events
 
     /**
      * @param string $calendarId
-     * @param \Google_Service_Calendar_Event $event
-     * @return \Google_Service_Calendar_Event
+     * @param Google_Service_Calendar_Event $event
+     * @return Google_Service_Calendar_Event
      */
     public function update($calendarId, $event)
     {
@@ -105,9 +108,9 @@ class Events
     }
 
     /**
-     * @param \OrangeHRM\Entity\Employee $employee
-     * @param \OrangeHRM\Entity\Leave $leave
-     * @return ?\Google_Service_Calendar_Event
+     * @param Employee $employee
+     * @param Leave $leave
+     * @return ?Google_Service_Calendar_Event
      */
     public function createNewLeaveEvent($employee, $leave)
     {
@@ -138,8 +141,8 @@ class Events
     }
 
     /**
-     * @param \Google_Service_Calendar_Event $event
-     * @param \OrangeHRM\Entity\Leave $leave
+     * @param Google_Service_Calendar_Event $event
+     * @param Leave $leave
      */
     public static function SetEventTime(&$event, &$leave)
     {

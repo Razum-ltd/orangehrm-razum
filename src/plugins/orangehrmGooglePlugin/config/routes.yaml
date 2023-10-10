@@ -1,6 +1,0 @@
-apiv2_google_calendar_sync:
-  path: /api/v2/google/calendar/sync
-  controller: OrangeHRM\Core\Controller\Rest\V2\GenericRestController::handle
-  methods: [ GET ]
-  defaults:
-    _api: OrangeHRM\Google\Api\CalendarAPI

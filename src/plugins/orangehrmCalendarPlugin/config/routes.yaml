@@ -1,0 +1,10 @@
+##########################
+#     Public APIs        #
+##########################
+apiv2_google_calendar_sync:
+  path: /api/v2/calendar/sync
+  controller: OrangeHRM\Core\Controller\Rest\V2\GenericPublicRestController::handle
+  #controller: OrangeHRM\Core\Controller\Rest\V2\GenericRestController::handle # not a public api.. need auth
+  methods: [ GET ]
+  defaults:
+    _api: OrangeHRM\Calendar\Api\CalendarAPI

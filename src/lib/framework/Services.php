@@ -443,11 +443,11 @@ final class Services
     public const OAUTH_SERVICE = 'oauth.oauth_service';
 
     ///////////////////////////////////////////////////////////////
-    /// Google plugin services
+    /// Calendar service
     ///////////////////////////////////////////////////////////////
 
     /**
-     * @see \OrangeHRM\Google\Service\CalendarService
+     * @see \OrangeHRM\Calendar\Service\CalendarService
      */
     public const CALENDAR_SERVICE = 'google.calendar_service';
 }

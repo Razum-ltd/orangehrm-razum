@@ -1,18 +1,21 @@
 <?php
-namespace OrangeHRM\Google\Service;
 
+namespace OrangeHRM\Calendar\Service;
+
+use DateTime;
 use Doctrine\ORM\EntityRepository;
 use OrangeHRM\Core\Traits\ORM\EntityManagerHelperTrait;
 use OrangeHRM\Entity\Leave;
-use OrangeHRM\Google\CalendarAPIV3\Events;
+use Google\Service\Calendar\EventDateTime;
+use Google_Service_Calendar_Event;
 
 class CalendarService
 {
     use EntityManagerHelperTrait;
 
-    const LEAVE_STATUS_FOR_SYNC = [
-        LEAVE::LEAVE_STATUS_LEAVE_APPROVED,
-        LEAVE::LEAVE_STATUS_LEAVE_TAKEN
+    public const LEAVE_STATUS_FOR_SYNC = [
+        LEAVE::LEAVE_STATUS_LEAVE_TAKEN,
+        LEAVE::LEAVE_STATUS_LEAVE_APPROVED
     ];
 
     private Events $googleEvents;
@@ -21,7 +24,7 @@ class CalendarService
     /** @var Leave[] */
     private array $employeeLeaves;
 
-    /** @var \Google_Service_Calendar_Event[] */
+    /** @var Google_Service_Calendar_Event[] */
     private array $googleCalendarEvents;
 
 
@@ -57,7 +60,7 @@ class CalendarService
                 $employee = $employeeLeave->getEmployee();
                 $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
             }
-        } catch(\Exception $error) {
+        } catch (\Exception $error) {
             $errors[] = $error->getMessage();
         }
         return [
@@ -69,7 +72,7 @@ class CalendarService
 
     /**
      * @param Leave $leave
-     * @param \Google_Service_Calendar_Event $event
+     * @param Google_Service_Calendar_Event $event
      * @return void
      */
     private function checkIfGoogleEventHasCorrectData(&$leave, &$event)
@@ -78,11 +81,11 @@ class CalendarService
         $neededEventTitle = Events::CreateEventTitle($employee, $leave);
 
         if (
-            // If the leave is a full day leave, the event should not contain hours
+                // If the leave is a full day leave, the event should not contain hours
             ($leave->getDurationType() == Leave::DURATION_TYPE_FULL_DAY && $this->checkIfDatetimeContainsHours($event->getStart())) ||
-            // If the leave is not a full day leave, the event should contain hours
+                // If the leave is not a full day leave, the event should contain hours
             ($leave->getDurationType() != Leave::DURATION_TYPE_FULL_DAY && !$this->checkIfDatetimeContainsHours($event->getStart())) ||
-            // If the event title is not correct, update it
+                // If the event title is not correct, update it
             ($event->getSummary() != $neededEventTitle)
         ) {
             $event->setSummary($neededEventTitle);
@@ -93,13 +96,13 @@ class CalendarService
 
     /**
      * If the datetime provided contains hours, it means that the leave is not a full day leave
-     * @param \Google\Service\Calendar\EventDateTime $datetime
+     * @param EventDateTime $datetime
      * @return bool
      */
     private function checkIfDatetimeContainsHours($datetime)
     {
         $timeToCheck = $datetime->getDateTime() ?? $datetime->getDate();
-        $dateTime = new \DateTime($timeToCheck);
+        $dateTime = new DateTime($timeToCheck);
         return $dateTime->format('H:i:s') != '00:00:00';
     }
 
@@ -118,7 +121,7 @@ class CalendarService
 
     /**
      * @param string $googleEventId
-     * @return \Google_Service_Calendar_Event|null
+     * @return Google_Service_Calendar_Event|null
      */
     private function findGoogleEventById($googleEventId)
     {
@@ -133,7 +136,7 @@ class CalendarService
     }
 
     /**
-     * @return \Google_Service_Calendar_Event[]
+     * @return Google_Service_Calendar_Event[]
      */
     private function getEventsFromLeaveCalendar()
     {

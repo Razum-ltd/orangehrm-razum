@@ -1,5 +1,6 @@
 <?php
-namespace OrangeHRM\Google\Exception;
+
+namespace OrangeHRM\Calendar\Exception;
 
 use Exception;
 
