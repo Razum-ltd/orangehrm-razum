@@ -1,14 +1,18 @@
 <?php
 
-namespace OrangeHRM\Google\CalendarAPIV3;
+namespace OrangeHRM\Calendar\Api\Base;
+
+use OrangeHRM\Calendar\Traits\Api\GoogleCalendarServiceTrait;
+use Google_Service_Calendar_CalendarListEntry;
+use Google_Service_Calendar_CalendarList;
 
 class CalendarList
 {
-    use CalendarServiceTrait;
+    use GoogleCalendarServiceTrait;
 
     /**
      * @param string $calendarId
-     * @return \Google_Service_Calendar_CalendarListEntry
+     * @return Google_Service_Calendar_CalendarListEntry
      */
     public function delete($calendarId)
     {
@@ -17,7 +21,7 @@ class CalendarList
 
     /**
      * @param string $calendarId
-     * @return \Google_Service_Calendar_CalendarListEntry
+     * @return Google_Service_Calendar_CalendarListEntry
      */
     public function get($calendarId)
     {
@@ -26,7 +30,7 @@ class CalendarList
 
     /**
      * @param array $optParams
-     * @return \Google_Service_Calendar_CalendarList
+     * @return Google_Service_Calendar_CalendarList
      */
     public function list($optParams = [])
     {

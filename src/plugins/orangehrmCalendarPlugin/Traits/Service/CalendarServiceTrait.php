@@ -1,6 +1,9 @@
 <?php
-namespace OrangeHRM\Google\Traits\Service;
 
+namespace OrangeHRM\Calendar\Traits\Service;
+
+use OrangeHRM\Framework\Services;
+use OrangeHRM\Calendar\Service\CalendarService;
 use OrangeHRM\Core\Traits\ServiceContainerTrait;
 
 trait CalendarServiceTrait
@@ -8,7 +11,7 @@ trait CalendarServiceTrait
     use ServiceContainerTrait;
 
     /**
-     * @return \OrangeHRM\Google\Service\CalendarService
+     * @return CalendarService
      */
     protected function getCalendarService()
     {

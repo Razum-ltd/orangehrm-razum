@@ -1,11 +1,12 @@
 <?php
+
 use OrangeHRM\Core\Traits\ServiceContainerTrait;
 use OrangeHRM\Framework\Http\Request;
 use OrangeHRM\Framework\PluginConfigurationInterface;
 use OrangeHRM\Framework\Services;
-use OrangeHRM\Google\Service\CalendarService;
+use OrangeHRM\Calendar\Service\CalendarService;
 
-class GooglePluginConfiguration implements PluginConfigurationInterface
+class CalendarPluginConfiguration implements PluginConfigurationInterface
 {
     use ServiceContainerTrait;
 
