@@ -146,7 +146,7 @@ class Leave
      *
      * @ORM\Column(name="google_event_id", type="string", length=255, nullable=true)
      */
-    private string $googleEventId;
+    private ?string $googleEventId = null;
 
     public function __construct()
     {
@@ -330,18 +330,18 @@ class Leave
     }
 
     /**
-     * @return string
+     * @return ?string
      */
-    public function getGoogleEventId(): string
+    public function getGoogleEventId()
     {
         return $this->googleEventId;
     }
 
     /**
-     * @param string $googleEventId
+     * @param ?string $googleEventId
      * @return Leave
      */
-    public function setGoogleEventId(string $googleEventId)
+    public function setGoogleEventId(?string $googleEventId)
     {
         $this->googleEventId = $googleEventId;
 

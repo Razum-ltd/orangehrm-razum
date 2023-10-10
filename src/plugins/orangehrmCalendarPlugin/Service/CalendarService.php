@@ -4,6 +4,7 @@ namespace OrangeHRM\Calendar\Service;
 
 use DateTime;
 use Doctrine\ORM\EntityRepository;
+use OrangeHRM\Calendar\Api\Base\Events;
 use OrangeHRM\Core\Traits\ORM\EntityManagerHelperTrait;
 use OrangeHRM\Entity\Leave;
 use Google\Service\Calendar\EventDateTime;
@@ -18,47 +19,53 @@ class CalendarService
         LEAVE::LEAVE_STATUS_LEAVE_APPROVED
     ];
 
-    private Events $googleEvents;
-    private EntityRepository $leaveRepository;
+    protected Events $googleEvents;
+    protected EntityRepository $leaveRepository;
 
     /** @var Leave[] */
-    private array $employeeLeaves;
+    protected array $employeeLeaves;
 
     /** @var Google_Service_Calendar_Event[] */
-    private array $googleCalendarEvents;
-
+    protected array $googleCalendarEvents;
 
     public function __construct($googleEvents = new Events())
     {
         $this->googleEvents = $googleEvents;
         $this->leaveRepository = $this->getEntityManager()->getRepository(Leave::class);
-        $this->employeeLeaves = $this->getAllEmployeeLeaves();
-        $this->googleCalendarEvents = $this->getEventsFromLeaveCalendar();
+        $this->employeeLeaves = $this->leaveRepository->findAll();
+        $this->googleCalendarEvents = $this->googleEvents->list(Events::CALENDAR_LEAVE_ID);
     }
-
+    /**
+     * Sync the employee leaves with the google calendar events.
+     * @return array
+     */
     public function syncEmployeeAbsence()
     {
         $completed = [];
         $errors = [];
         try {
-            foreach ($this->employeeLeaves as $employeeLeave) {
-                $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
-                // No google calendar event yet, create it.
-                if (!$googleEvent) {
-                    // The function check if the event should be created based on the leave status. This could be improved...
-                    $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
-                    continue;
+            if ($this->employeeLeaves && count($this->employeeLeaves) > 0) {
+                foreach ($this->employeeLeaves as $employeeLeave) {
+                    if ($employeeLeave) {
+                        $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
+                        // No google calendar event yet, create it.
+                        if (!$googleEvent) {
+                            // The function check if the event should be created based on the leave status. This could be improved...
+                            $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
+                            continue;
+                        }
+                        // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
+                        if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
+                            $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
+                            continue;
+                        }
+                        // The event should be on the calendar, but is all the data correct?
+                        $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
+                        // The event is correct, add it to the completed array.
+                        $employee = $employeeLeave->getEmployee();
+                        $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
+                    }
                 }
-                // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
-                if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
-                    $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
-                    continue;
-                }
-                // The event should be on the calendar, but is all the data correct?
-                $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
-                // The event is correct, add it to the completed array.
-                $employee = $employeeLeave->getEmployee();
-                $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
             }
         } catch (\Exception $error) {
             $errors[] = $error->getMessage();
@@ -133,21 +140,5 @@ class CalendarService
             }
         }
         return null;
-    }
-
-    /**
-     * @return Google_Service_Calendar_Event[]
-     */
-    private function getEventsFromLeaveCalendar()
-    {
-        return $this->googleEvents->list(Events::CALENDAR_LEAVE_ID);
-    }
-
-    /**
-     * @return Leave[]
-     */
-    private function getAllEmployeeLeaves()
-    {
-        return $this->leaveRepository->findAll();
     }
 }
