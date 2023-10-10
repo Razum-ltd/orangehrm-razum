@@ -20,16 +20,14 @@ class CalendarAPI extends Endpoint implements CollectionEndpoint
      */
     public function getAll(): EndpointResourceResult
     {
-        $service = $this->getCalendarService();
-        return new EndpointResourceResult(
-            ArrayModel::class,
-            [var_dump($service)] // $service->syncEmployeeAbsence()
-        );
-        /* try {
-
+        try {
+            return new EndpointResourceResult(
+                ArrayModel::class,
+                $this->getCalendarService()->syncEmployeeAbsence()
+            );
         } catch (\Exception $error) {
             return new EndpointResourceResult(ArrayModel::class, [$error->getMessage()]);
-        } */
+        }
     }
     /**
      * @inheritDoc

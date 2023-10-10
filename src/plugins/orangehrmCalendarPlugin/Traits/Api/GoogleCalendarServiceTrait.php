@@ -4,17 +4,16 @@ namespace OrangeHRM\Calendar\Traits\Api;
 
 use Exception;
 use Google_Client;
-use OrangeHRM\Calendar\Exception\CalendarServiceException;
 
 trait GoogleCalendarServiceTrait
 {
     /**
-     * @var \Google\Service\Calendar|null
+     * @var \Google_Service_Calendar|null
      */
-    private ?\Google\Service\Calendar $calendarService = null;
+    private ?\Google_Service_Calendar $calendarService = null;
 
     /**
-     * @throws CalendarServiceException
+     * @throws Exception
      * @return Google_Client
      */
     private function getClient(): Google_Client
@@ -25,33 +24,33 @@ trait GoogleCalendarServiceTrait
             $client->setAccessType('offline');
             $client->setIncludeGrantedScopes(true);
             $client->addScope([
-                Google\Service\Calendar::CALENDAR,
-                Google\Service\Calendar::CALENDAR_EVENTS,
+                \Google_Service_Calendar::CALENDAR,
+                \Google_Service_Calendar::CALENDAR_EVENTS,
             ]);
             // Change the credentials.json file for a different service account
-            $client->setAuthConfig('../config/credentials.json');
+            $client->setAuthConfig(__DIR__ . '/../../config/credentials.json');
             return $client;
         } catch (Exception $e) {
-            throw CalendarServiceException::cannotCreateClient();
+            throw new Exception("Error creating Google Client: " . $e->getMessage());
         }
     }
 
     /**
-     * @return \Google\Service\Calendar
+     * @return \Google_Service_Calendar
      */
-    public function getCalendarService(): \Google\Service\Calendar
+    public function getCalendarService(): \Google_Service_Calendar
     {
         if ($this->calendarService == null) {
-            $this->setCalendarService(new \Google\Service\Calendar($this->getClient()));
+            $this->setCalendarService(new \Google_Service_Calendar($this->getClient()));
         }
         return $this->calendarService;
     }
 
     /**
-     * @param \Google\Service\Calendar $calendarService
+     * @param \Google_Service_Calendar $calendarService
      * @return self
      */
-    public function setCalendarService(\Google\Service\Calendar $calendarService): self
+    public function setCalendarService(\Google_Service_Calendar $calendarService): self
     {
         $this->calendarService = $calendarService;
 
