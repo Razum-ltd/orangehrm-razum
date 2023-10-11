@@ -11,7 +11,7 @@ use Google_Service_Calendar_Event;
 class Events
 {
     use GoogleCalendarServiceTrait;
-    public const CALENDAR_LEAVE_ID = 'primary';
+    public const CALENDAR_LEAVE_ID = 'klemen.komel@gmail.com';
     public const EVENT_STATUS_CONFIRMED = 'confirmed';
     public const EVENT_STATUS_TENTATIVE = 'tentative';
     public const EVENT_STATUS_CANCELLED = 'cancelled';
