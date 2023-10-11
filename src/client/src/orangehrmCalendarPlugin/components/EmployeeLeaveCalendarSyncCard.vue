@@ -40,14 +40,26 @@ export default {
         })
         .then((response) => {
           if (response.status !== 200) {
-            this.$toast.saveError();
+            this.$toast.error({
+              title: 'Error syncing calendar',
+            });
             return;
           }
-          return response.json();
+          return response.data.data;
         })
         .then((data) => {
-          console.log(data);
-          this.$toast.saveSuccess();
+          const {completed, errors} = data;
+          if (errors.length) {
+            this.$toast.warn({
+              title: 'Some errors syncing the calendar',
+              message: errors.join(', '),
+            });
+            return;
+          }
+          this.$toast.success({
+            title: 'Calendar synced successfully',
+            message: `Successfully synced ${completed?.length || '0'}`,
+          });
         });
     },
   },
