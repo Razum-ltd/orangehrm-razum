@@ -46,25 +46,23 @@ class CalendarService
         try {
             if ($this->employeeLeaves && count($this->employeeLeaves) > 0) {
                 foreach ($this->employeeLeaves as $employeeLeave) {
-                    if ($employeeLeave) {
-                        $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
-                        // No google calendar event yet, create it.
-                        if (!$googleEvent) {
-                            // The function check if the event should be created based on the leave status. This could be improved...
-                            $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
-                            continue;
-                        }
-                        // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
-                        if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
-                            $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
-                            continue;
-                        }
-                        // The event should be on the calendar, but is all the data correct?
-                        $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
-                        // The event is correct, add it to the completed array.
-                        $employee = $employeeLeave->getEmployee();
-                        $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
+                    $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
+                    // No google calendar event yet, create it.
+                    if (!$googleEvent) {
+                        // The function check if the event should be created based on the leave status. This could be improved...
+                        $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
+                        continue;
                     }
+                    // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
+                    if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
+                        $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
+                        continue;
+                    }
+                    // The event should be on the calendar, but is all the data correct?
+                    $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
+                    // The event is correct, add it to the completed array.
+                    $employee = $employeeLeave->getEmployee();
+                    $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
                 }
             }
         } catch (\Exception $error) {
