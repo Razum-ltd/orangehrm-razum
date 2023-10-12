@@ -2,6 +2,7 @@
 
 namespace OrangeHRM\Calendar\Api\Base;
 
+use OrangeHRM\Config\Config;
 use OrangeHRM\Entity\Leave;
 use OrangeHRM\Entity\Employee;
 use OrangeHRM\Calendar\Traits\Api\GoogleCalendarServiceTrait;
@@ -30,7 +31,7 @@ class Events
             'description' => null,
             'start' => EventDateTime::NULL_VALUE,
             'end' => EventDateTime::NULL_VALUE,
-            'status' => 'confirmed'
+            'status' => self::EVENT_STATUS_CONFIRMED
         ]
     ) {
         $event = new Google_Service_Calendar_Event();
@@ -114,17 +115,23 @@ class Events
      */
     public function createNewLeaveEvent($employee, $leave)
     {
-        if ($leave->getStatus() != Leave::LEAVE_STATUS_LEAVE_APPROVED || $leave->getStatus() != Leave::LEAVE_STATUS_LEAVE_TAKEN) {
-            return;
-        }
+        $event = new Google_Service_Calendar_Event();
+        self::SetEventTime($event, $leave);
 
-        $event = $this->newEvent();
         $event->setSummary(self::CreateEventTitle($employee, $leave));
-        $event->setDescription($leave->getLeaveType()->getName());
         $event->setStatus(self::EVENT_STATUS_CONFIRMED);
         $event->setVisibility(self::EVENT_VISIBILITY_PUBLIC);
 
-        self::SetEventTime($event, $leave);
+        $baseUrl = Config::PRODUCT_MODE === Config::MODE_PROD ? "https://hrm.dev.razum.si" : "http://localhost:8000";
+        $htmlLink = $baseUrl . '/web/index.php/leave/viewLeaveRequest/' . $leave->getId();
+        $event->setHangoutLink($htmlLink);
+
+        $event->setDescription("Tip: {$leave->getLeaveType()->getName()}
+        Čas: {$leave->getLengthDays()}dni, {$leave->getLengthHours()}ur
+        Za: {$leave->getEmployee()->getFirstName()} {$leave->getEmployee()->getLastName()}
+        Od: {$leave->getDate()->format('Y-m-d H:i:s')}
+        Do: {$leave->getDate()->format('Y-m-d H:i:s')}
+        Za več informacij si odpri povezavo: <a href='{$htmlLink}'>{$htmlLink}</a>");
 
         return $this->insert(self::CALENDAR_LEAVE_ID, $event);
     }
@@ -146,12 +153,23 @@ class Events
      */
     public static function SetEventTime(&$event, &$leave)
     {
-        if ($leave->getDurationType() == Leave::DURATION_TYPE_FULL_DAY) {
-            $event->setStart((new EventDateTime())->setDate($leave->getStartTime()->format('Y-m-d')));
-            $event->setEnd((new EventDateTime())->setDate($leave->getEndTime()->format('Y-m-d')));
+        $start = new EventDateTime();
+        $end = new EventDateTime();
+        $date = $leave->getDate()->format('Y-m-d');
+        if ($leave->getDurationType() !== Leave::DURATION_TYPE_FULL_DAY) {
+            $start->setDateTime(
+                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getStartTime()->format('H:i:s'))
+                    ->format(\DateTime::RFC3339)
+            );
+            $end->setDateTime(
+                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getEndTime()->format('H:i:s'))
+                    ->format(\DateTime::RFC3339)
+            );
         } else {
-            $event->setStart((new EventDateTime())->setDateTime($leave->getStartTime()->format('Y-m-d H:i:s')));
-            $event->setEnd((new EventDateTime())->setDateTime($leave->getEndTime()->format('Y-m-d H:i:s')));
+            $start->setDate($date);
+            $end->setDate($date);
         }
+        $event->setStart($start);
+        $event->setEnd($end);
     }
 }

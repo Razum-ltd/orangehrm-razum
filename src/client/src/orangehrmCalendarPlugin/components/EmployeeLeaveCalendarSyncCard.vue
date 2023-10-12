@@ -40,10 +40,10 @@ export default {
         })
         .then((response) => {
           if (response.status !== 200) {
-            this.$toast.error({
-              title: 'Error syncing calendar',
-            });
-            return;
+            throw new Error('Problem with the request or network.');
+          }
+          if (typeof response.data['completed'] === 'object') {
+            throw new Error(response.data.data);
           }
           return response.data.data;
         })
@@ -59,6 +59,12 @@ export default {
           this.$toast.success({
             title: 'Calendar synced successfully',
             message: `Successfully synced ${completed?.length || '0'}`,
+          });
+        })
+        .catch((error) => {
+          this.$toast.error({
+            title: 'Error syncing the calendar',
+            message: error.message,
           });
         });
     },
