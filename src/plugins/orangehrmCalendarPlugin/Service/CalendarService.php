@@ -32,7 +32,7 @@ class CalendarService
     {
         $this->googleEvents = $googleEvents;
         $this->leaveRepository = $this->getEntityManager()->getRepository(Leave::class);
-        $this->employeeLeaves = $this->leaveRepository->findAll();
+        $this->employeeLeaves = $this->leaveRepository->findBy([]); // get all leave records
         $this->googleCalendarEvents = $this->googleEvents->list(Events::CALENDAR_LEAVE_ID);
     }
     /**
@@ -43,35 +43,50 @@ class CalendarService
     {
         $completed = [];
         $errors = [];
-        try {
-            if ($this->employeeLeaves && count($this->employeeLeaves) > 0) {
-                foreach ($this->employeeLeaves as $employeeLeave) {
+        if ($this->employeeLeaves && count($this->employeeLeaves) > 0) {
+            foreach ($this->employeeLeaves as $employeeLeave) {
+                try {
                     $googleEvent = $this->findGoogleEventById($employeeLeave->getGoogleEventId());
                     // No google calendar event yet, create it.
                     if (!$googleEvent) {
-                        // The function check if the event should be created based on the leave status. This could be improved...
+                        if (!in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC)) {
+                            continue;
+                        }
+                        // Create the event as the status is OK.
+                        // If the event is not created, throw an exception. (the google_event_id will not be added in the db)
                         $this->createNewGoogleEventFromEmployeeLeave($employeeLeave);
+                        $this->addToArray($completed, $employeeLeave);
                         continue;
                     }
                     // The event exists on the calendar but the status has changed in the db, delete it from google calendar.
-                    if ((in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
+                    if (!(in_array($employeeLeave->getStatus(), self::LEAVE_STATUS_FOR_SYNC))) {
                         $this->googleEvents->delete(Events::CALENDAR_LEAVE_ID, $googleEvent->getId());
+                        $this->addToArray($completed, $employeeLeave);
                         continue;
                     }
-                    // The event should be on the calendar, but is all the data correct?
                     $this->checkIfGoogleEventHasCorrectData($employeeLeave, $googleEvent);
-                    // The event is correct, add it to the completed array.
-                    $employee = $employeeLeave->getEmployee();
-                    $completed[] = Events::CreateEventTitle($employee, $employeeLeave);
+                    $this->addToArray($completed, $employeeLeave);
+                } catch (\Exception $error) {
+                    $errors[] = $error->getMessage();
                 }
             }
-        } catch (\Exception $error) {
-            $errors[] = $error->getMessage();
         }
+        $this->getEntityManager()->flush();
         return [
             'completed' => $completed,
-            'errors' => $errors
+            'errors' => $errors,
         ];
+    }
+
+    /**
+     * Add the event to the completed array (for the response)
+     * @param array $completed
+     * @param Leave $employeeLeave
+     */
+    private function addToArray(&$array, &$employeeLeave)
+    {
+        $employee = $employeeLeave->getEmployee();
+        $array[] = Events::CreateEventTitle($employee, $employeeLeave);
     }
 
 
@@ -117,11 +132,13 @@ class CalendarService
     private function createNewGoogleEventFromEmployeeLeave(&$leave)
     {
         $event = $this->googleEvents->createNewLeaveEvent($leave->getEmployee(), $leave);
-        if ($event) {
-            $leave->setGoogleEventId($event->getId());
-            $this->getEntityManager()->persist($leave);
-            $this->getEntityManager()->flush();
+
+        if (!$event) {
+            throw new \Exception('Could not create event for leave: ' . $leave->getId());
         }
+
+        $leave->setGoogleEventId($event->getId());
+        $this->getEntityManager()->persist($leave);
     }
 
     /**
