@@ -73,3 +73,5 @@ RUN cd /var/www/html/src/client && . $HOME/.nvm/nvm.sh  && nvm use 18 && yarn in
 RUN cd /var/www/html/installer/client && . $HOME/.nvm/nvm.sh  && nvm use 18 && yarn install && yarn build
 
 RUN cd /var/www/html
+
+VOLUME ["/var/www/html/lib/confs", "/var/www/html/src/lib/config" ]
