@@ -13,5 +13,6 @@ logInsatall.log
 .phpunit.result.cache
 coverage/
 src/plugins/orangehrmFunctionalTestingPlugin
+src/plugins/orangehrmCalendarPlugin/config/credentials.json
 .php-cs-fixer.cache
 .php-cs-fixer.php
