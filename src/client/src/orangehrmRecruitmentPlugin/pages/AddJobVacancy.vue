@@ -55,6 +55,15 @@
           </oxd-grid-item>
         </oxd-grid>
         <oxd-grid :cols="3" class="orangehrm-full-width-grid">
+          <oxd-grid-item class="orangehrm-grid-item-span-2">
+            <editor-input
+              :label="$t('general.description')"
+              :value="vacancy.description"
+              @update="updateEditorValue"
+            />
+          </oxd-grid-item>
+        </oxd-grid>
+        <oxd-grid :cols="3" class="orangehrm-full-width-grid">
           <oxd-grid-item>
             <employee-autocomplete
               v-model="vacancy.hiringManager"
@@ -137,6 +146,7 @@ import {
   numberShouldBeBetweenMinAndMaxValue,
 } from '@ohrm/core/util/validation/rules';
 import EmployeeAutocomplete from '@/core/components/inputs/EmployeeAutocomplete';
+import EditorInput from '@/core/components/inputs/EditorInput';
 import JobtitleDropdown from '@/orangehrmPimPlugin/components/JobtitleDropdown';
 import VacancyLinkCard from '../components/VacancyLinkCard.vue';
 import {OxdSwitchInput} from '@ohrm/oxd';
@@ -159,6 +169,7 @@ export default {
     'employee-autocomplete': EmployeeAutocomplete,
     'jobtitle-dropdown': JobtitleDropdown,
     'vacancy-link-card': VacancyLinkCard,
+    'editor-input': EditorInput,
   },
 
   setup() {
@@ -210,6 +221,9 @@ export default {
       });
   },
   methods: {
+    updateEditorValue(value) {
+      this.vacancy.description = value;
+    },
     onCancel() {
       navigate('/recruitment/viewJobVacancy');
     },

@@ -22,6 +22,7 @@ import pages from './pages';
 import acl, {AclAPI} from './core/plugins/acl/acl';
 import toaster, {ToasterAPI} from './core/plugins/toaster/toaster';
 import createI18n, {TranslateAPI} from './core/plugins/i18n/translate';
+import CKEditor from '@ckeditor/ckeditor5-vue';
 import '@ohrm/oxd/fonts.css';
 import '@ohrm/oxd/icons.css';
 import '@ohrm/oxd/style.css';
@@ -43,6 +44,9 @@ app.use(toaster, {
   animation: 'oxd-toast-list',
   position: 'bottom',
 });
+
+// include rich text editor
+app.use(CKEditor);
 
 // @ts-expect-error: appGlobal is not in window object by default
 const baseUrl = window.appGlobal.baseUrl;

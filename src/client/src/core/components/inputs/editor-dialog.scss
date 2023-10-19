@@ -1,0 +1,15 @@
+.orangehrm-editor-input {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 1rem;
+
+    label {
+        color: #64728c;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: 'Nunito Sans', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+}
