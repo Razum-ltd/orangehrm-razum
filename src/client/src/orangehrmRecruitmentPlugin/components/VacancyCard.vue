@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <!--
 /**
  * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
@@ -34,9 +35,11 @@
     <oxd-divider v-show="vacancyDescription"></oxd-divider>
     <div :class="{'orangehrm-vacancy-card-body': isViewDetails}">
       <oxd-text type="toast-message">
-        <pre v-if="vacancyDescription" class="orangehrm-vacancy-card-pre-tag">{{
-          vacancyDescription
-        }}</pre>
+        <pre
+          v-if="vacancyDescription"
+          class="orangehrm-vacancy-card-pre-tag"
+          v-html="vacancyDescription"
+        ></pre>
       </oxd-text>
     </div>
     <div
@@ -110,3 +113,13 @@ export default {
 </script>
 
 <style src="../pages/public-job-vacancy.scss" lang="scss" scoped></style>
+<style lang="scss">
+blockquote {
+  background: rgba(0, 0, 0, 0.015);
+  border-left: 0.5rem solid #ccc;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  margin: 0;
+  font-style: italic;
+}
+</style>
