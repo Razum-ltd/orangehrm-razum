@@ -100,12 +100,14 @@
       display: flex;
       justify-content: space-between;
       flex-direction: column-reverse;
+
       @include oxd-respond-to('md') {
         flex-direction: row;
       }
 
       & .orangehrm-main-title {
         word-break: break-word;
+
         @include oxd-respond-to('md') {
           align-self: center;
         }
@@ -129,6 +131,7 @@
         align-items: center;
         word-break: break-word;
         justify-content: space-between;
+
         & button {
           flex-shrink: 0;
         }
@@ -144,6 +147,7 @@
 
       &-body {
         @include truncate(4, 15px, #ffff);
+
         @include oxd-respond-to('md') {
           @include truncate(2, 15px, #ffff);
         }
@@ -173,6 +177,7 @@
   flex: 1;
   height: 32px;
   margin-bottom: 8px;
+
   @include oxd-respond-to('md') {
     flex: 0;
     margin-bottom: 0;
@@ -182,12 +187,15 @@
 .orangehrm-container {
   padding: 0;
   height: 72vh;
+
   @include oxd-respond-to('md') {
     height: 75vh;
   }
+
   @media screen and (min-width: 1536px) {
     height: 85vh;
   }
+
   @media screen and (min-width: 2560px) {
     height: 90vh;
   }

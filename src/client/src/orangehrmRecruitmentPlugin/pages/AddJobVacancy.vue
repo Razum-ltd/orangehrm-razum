@@ -45,17 +45,6 @@
         </oxd-grid>
         <oxd-grid :cols="3" class="orangehrm-full-width-grid">
           <oxd-grid-item class="orangehrm-grid-item-span-2">
-            <oxd-input-field
-              v-model="vacancy.description"
-              type="textarea"
-              :label="$t('general.description')"
-              :placeholder="$t('general.type_description_here')"
-              :rules="rules.description"
-            />
-          </oxd-grid-item>
-        </oxd-grid>
-        <oxd-grid :cols="3" class="orangehrm-full-width-grid">
-          <oxd-grid-item class="orangehrm-grid-item-span-2">
             <editor-input
               :label="$t('general.description')"
               :value="vacancy.description"
