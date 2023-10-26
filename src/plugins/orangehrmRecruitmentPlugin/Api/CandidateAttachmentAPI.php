@@ -21,6 +21,7 @@ namespace OrangeHRM\Recruitment\Api;
 
 use OrangeHRM\Core\Api\V2\CrudEndpoint;
 use OrangeHRM\Core\Api\V2\Endpoint;
+use OrangeHRM\Core\Api\V2\EndpointCollectionResult;
 use OrangeHRM\Core\Api\V2\EndpointResourceResult;
 use OrangeHRM\Core\Api\V2\EndpointResult;
 use OrangeHRM\Core\Api\V2\Model\ArrayModel;
@@ -29,6 +30,7 @@ use OrangeHRM\Core\Api\V2\Validator\ParamRule;
 use OrangeHRM\Core\Api\V2\Validator\ParamRuleCollection;
 use OrangeHRM\Core\Api\V2\Validator\Rule;
 use OrangeHRM\Core\Api\V2\Validator\Rules;
+use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Entity\Candidate;
 use OrangeHRM\Entity\CandidateAttachment;
 use OrangeHRM\Recruitment\Api\Model\CandidateAttachmentModel;
@@ -39,6 +41,7 @@ use OrangeHRM\Recruitment\Traits\Service\RecruitmentAttachmentServiceTrait;
 class CandidateAttachmentAPI extends Endpoint implements CrudEndpoint
 {
     use RecruitmentAttachmentServiceTrait;
+    use LoggerTrait;
 
     public const PARAMETER_COMMENT = 'comment';
     public const PARAMETER_CANDIDATE_ID = 'candidateId';
@@ -164,12 +167,30 @@ class CandidateAttachmentAPI extends Endpoint implements CrudEndpoint
             RequestParams::PARAM_TYPE_ATTRIBUTE,
             self::PARAMETER_CANDIDATE_ID
         );
-        $candidateAttachment = $this->getRecruitmentAttachmentService()
-            ->getRecruitmentAttachmentDao()
-            ->getPartialCandidateAttachmentByCandidateId($candidateId);
-        $this->throwRecordNotFoundExceptionIfNotExist($candidateAttachment, RecruitmentAttachment::class);
 
-        return new EndpointResourceResult(CandidateAttachmentModel::class, $candidateAttachment);
+        $candidateAttachments = $this->getRecruitmentAttachmentService()
+            ->getRecruitmentAttachmentDao()
+            ->getCandidateAttachmentsByCandidateId($candidateId);
+
+        if ($candidateAttachments === null || empty($candidateAttachments)) {
+            return new EndpointResourceResult(ArrayModel::class, []);
+        }
+
+        $response = [];
+        /** @var CandidateAttachment $attachment */
+        foreach ($candidateAttachments as $attachment) {
+            $fileContent = stream_get_contents($attachment->getFileContent());
+            $response[] = [
+                'id' => $attachment->getId(),
+                'fileName' => $attachment->getFileName(),
+                'fileType' => $attachment->getFileType(),
+                'fileSize' => $attachment->getFileSize(),
+                'fileContent' => base64_encode($fileContent),
+                'candidateId' => $attachment->getCandidate()->getId(),
+            ];
+        }
+
+        return new EndpointCollectionResult(ArrayModel::class, $response);
     }
 
     /**

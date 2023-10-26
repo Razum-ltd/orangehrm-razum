@@ -138,6 +138,7 @@ import {
   validDateFormat,
   validTimeFormat,
   shouldNotExceedCharLength,
+  generateRecruitmentNoteValidation,
 } from '@/core/util/validation/rules';
 import {navigate} from '@/core/util/helper/navigation';
 import useLocale from '@/core/util/composable/useLocale';
@@ -236,7 +237,7 @@ export default {
               : this.$t('general.already_exists');
           },
         ],
-        note: [shouldNotExceedCharLength(2000)],
+        note: generateRecruitmentNoteValidation(),
       },
       statuses: [
         {id: 1, label: this.$t('recruitment.application_initiated')},

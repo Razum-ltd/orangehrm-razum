@@ -1,0 +1,199 @@
+.oxd-file-input {
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    max-width: 0;
+    width: 0;
+}
+
+.oxd-file-div {
+    font-family: Nunito Sans, sans-serif;
+    color: #64728c;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    border-radius: 0.65rem;
+    padding: 0.675rem 0.5rem;
+    width: 100%;
+    padding: 0;
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    word-wrap: break-word;
+    min-height: 45px;
+    background-color: var(--oxd-white-color, #ffffff);
+    cursor: pointer;
+
+    &--active {
+        border: 1px solid #e8eaef;
+    }
+
+    &--focus {
+        border: 1px solid #929baa;
+        box-shadow: 1px 1px 6px #2323241f;
+        outline: 0;
+    }
+
+    &--error {
+        border: 1px solid #eb0910;
+        box-shadow: 0 0 5px 0.2rem #df09101a;
+    }
+
+    &--disabled,
+    &--readonly {
+        background: #f0f0fc;
+    }
+}
+
+.oxd-file-button {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--oxd-interface-gray-darken-1-color, #64728c);
+    border-radius: 0.65rem;
+    background-color: var(--oxd-background-light-gray-color, #f1f2f5);
+    font-size: .875rem;
+    font-weight: 600;
+    height: 35px;
+    padding: 0 1.5rem;
+    margin-left: 0.25rem;
+
+    &.--disabled {
+        cursor: unset;
+        color: var(--oxd-interface-gray-lighten-1-color, #cfd3de);
+        background-color: var(--oxd-white-darken-1-color, #fcfcfc);
+    }
+}
+
+.oxd-file-input-div {
+    box-sizing: border-box;
+    font-family: Nunito Sans, sans-serif;
+    color: #64728c;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    border-radius: 0.65rem;
+    padding: 0.675rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.oxd-file-input-icon {
+    margin-left: auto;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 0.65rem;
+    background-color: var(--oxd-background-light-gray-color, #f1f2f5);
+    margin-right: 0.25rem;
+
+    &.--disabled {
+        cursor: unset;
+        color: var(--oxd-interface-gray-lighten-1-color, #cfd3de);
+        background-color: var(--oxd-white-darken-1-color, #fcfcfc);
+    }
+}
+
+.oxd-file-errors {
+    display: flex;
+    flex-direction: column;
+    margin: 0.5rem auto;
+    gap: 0.25rem;
+
+    .oxd-file-error {
+        font-size: 12px;
+        color: #eb0910;
+        font-family: Nunito Sans, sans-serif;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+}
+
+.orangehrm-file-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem auto;
+
+    &.--disabled .orangehrm-file-preview {
+        cursor: unset !important;
+        color: var(--oxd-interface-gray-lighten-1-color, #cfd3de);
+        background-color: var(--oxd-white-darken-1-color, #fcfcfc);
+
+        &:hover {
+            cursor: unset !important;
+            color: initial !important;
+            background-color: initial !important;
+            box-shadow: iniital !important;
+        }
+    }
+}
+
+.orangehrm-file {
+    &-current {
+        display: flex;
+        margin-bottom: 1rem;
+    }
+
+    &-icon {
+        display: block;
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &-download {
+        font-size: 12px;
+        margin-left: 10px;
+        vertical-align: middle;
+    }
+
+    &-name {
+        display: block;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+    }
+
+    &-options {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    &-preview {
+        padding: 0.5rem;
+        cursor: pointer;
+        min-height: 90px;
+        min-width: 150px;
+        text-align: center;
+        border-radius: 0.5rem;
+        justify-content: center;
+        flex-direction: column;
+        display: flex;
+        align-items: center;
+        border: 1px solid $oxd-interface-gray-lighten-1-color;
+        background-color: $oxd-background-pastel-white-color;
+
+        &:not(.--disabled):hover {
+            border: 1px solid #eb0910;
+            background-color: #df09101a;
+            box-shadow: 0 0 5px 0.2rem #df09101a;
+        }
+
+        &.--disabled,
+        &.--disabled .orangehrm-file-icon,
+        &.--disabled .orangehrm-file-name {
+            cursor: unset;
+            color: var(--oxd-interface-gray-lighten-1-color, #cfd3de);
+            background-color: var(--oxd-white-darken-1-color, #fcfcfc);
+        }
+    }
+}

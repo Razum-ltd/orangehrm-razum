@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <!--
 /**
  * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
@@ -37,10 +38,10 @@
           {{ $t('general.description') }}
         </oxd-text>
         <oxd-text tag="p" :class="descriptionClasses">
-          <pre class="orangehrm-applicant-card-pre-tag"
-            >{{ vacancyDescription }}
-        </pre
-          >
+          <pre
+            class="orangehrm-applicant-card-pre-tag"
+            v-html="vacancyDescription"
+          ></pre>
         </oxd-text>
         <div
           v-if="vacancyDescription.length > descriptionLength"
@@ -107,49 +108,18 @@
             </oxd-grid>
           </oxd-form-row>
           <oxd-form-row>
-            <oxd-grid :cols="3" class="orangehrm-full-width-grid">
+            <oxd-grid :cols="1" class="orangehrm-full-width-grid">
               <oxd-grid-item>
-                <oxd-input-field
+                <oxd-multiple-files-input
                   v-model="applicant.resume"
-                  name="resume"
-                  type="file"
+                  name="resume[]"
                   :label="$t('recruitment.resume')"
                   :button-label="$t('general.browse')"
                   :rules="rules.resume"
-                  required
                 />
                 <oxd-text class="orangehrm-input-hint" tag="p">
                   {{ $t('general.accept_custom_format_file') }}
                 </oxd-text>
-              </oxd-grid-item>
-            </oxd-grid>
-          </oxd-form-row>
-          <oxd-form-row>
-            <oxd-grid :cols="3" class="orangehrm-full-width-grid">
-              <oxd-grid-item class="orangehrm-applicant-container-colspan-2">
-                <oxd-input-field
-                  v-model="applicant.keywords"
-                  name="keywords"
-                  :label="$t('recruitment.keywords')"
-                  :placeholder="`${$t(
-                    'recruitment.enter_comma_seperated_words',
-                  )}...`"
-                  :rules="rules.keywords"
-                />
-              </oxd-grid-item>
-            </oxd-grid>
-          </oxd-form-row>
-          <oxd-form-row>
-            <oxd-grid :cols="3" class="orangehrm-full-width-grid">
-              <oxd-grid-item class="orangehrm-applicant-container-colspan-2">
-                <oxd-input-field
-                  v-model="applicant.comment"
-                  name="comment"
-                  :label="$t('general.notes')"
-                  type="textarea"
-                  :placeholder="$t('general.type_here')"
-                  :rules="rules.comment"
-                />
               </oxd-grid-item>
             </oxd-grid>
           </oxd-form-row>
@@ -200,14 +170,15 @@ import {ref, toRefs} from 'vue';
 import FullNameInput from '@/orangehrmPimPlugin/components/FullNameInput';
 import SuccessDialog from '@/orangehrmRecruitmentPlugin/components/SuccessDialog';
 import {
-  maxFileSize,
+  maxFilesSize,
   required,
   shouldNotExceedCharLength,
   validEmailFormat,
-  validFileTypes,
+  validFilesTypes,
   validPhoneNumberFormat,
 } from '@ohrm/core/util/validation/rules';
 import SubmitButton from '@/core/components/buttons/SubmitButton';
+import OxdMultipleFilesInput from '@/core/components/inputs/OxdMultipleFilesInput';
 import {navigate} from '@/core/util/helper/navigation';
 import {APIService} from '@/core/util/services/api.service';
 import {urlFor} from '@/core/util/helper/url';
@@ -231,6 +202,7 @@ export default {
     'submit-button': SubmitButton,
     'full-name-input': FullNameInput,
     'success-dialogue': SuccessDialog,
+    'oxd-multiple-files-input': OxdMultipleFilesInput,
   },
   props: {
     allowedFileTypes: {
@@ -290,11 +262,9 @@ export default {
         lastName: [required, shouldNotExceedCharLength(30)],
         resume: [
           required,
-          maxFileSize(this.maxFileSize),
-          validFileTypes(this.allowedFileTypes),
+          maxFilesSize(this.maxFileSize),
+          validFilesTypes(this.allowedFileTypes),
         ],
-        comment: [shouldNotExceedCharLength(250)],
-        keywords: [shouldNotExceedCharLength(250)],
         contactNumber: [shouldNotExceedCharLength(25), validPhoneNumberFormat],
         email: [required, validEmailFormat, shouldNotExceedCharLength(50)],
       },

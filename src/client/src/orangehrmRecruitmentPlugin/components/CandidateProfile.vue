@@ -92,16 +92,14 @@
         <oxd-form-row>
           <oxd-grid :cols="2" class="orangehrm-full-width-grid">
             <oxd-grid-item>
-              <file-upload-input
-                v-model:newFile="attachment.newAttachment"
-                v-model:method="attachment.method"
+              <oxd-multiple-files-input
+                :key="attachments"
+                v-model="attachments"
+                required
                 :label="$t('recruitment.resume')"
                 :button-label="$t('general.browse')"
-                :file="attachment.oldAttachment"
                 :rules="rules.resume"
-                :hint="$t('general.accept_custom_format_file')"
                 :disabled="!editable"
-                :url="getResumeUrl"
               />
             </oxd-grid-item>
           </oxd-grid>
@@ -183,8 +181,8 @@
 <script>
 import {
   required,
-  maxFileSize,
-  validFileTypes,
+  maxFilesSize,
+  validFilesTypes,
   validDateFormat,
   validEmailFormat,
   validPhoneNumberFormat,
@@ -193,11 +191,11 @@ import {
 import {urlFor} from '@ohrm/core/util/helper/url';
 import DateInput from '@/core/components/inputs/DateInput';
 import {APIService} from '@/core/util/services/api.service';
-import FileUploadInput from '@/core/components/inputs/FileUploadInput';
 import FullNameInput from '@/orangehrmPimPlugin/components/FullNameInput';
 import VacancyDropdown from '@/orangehrmRecruitmentPlugin/components/VacancyDropdown';
 import useDateFormat from '@/core/util/composable/useDateFormat';
 import ConfirmationDialog from '@/core/components/dialogs/ConfirmationDialog';
+import OxdMultipleFilesInput from '@/core/components/inputs/OxdMultipleFilesInput';
 import {OxdSwitchInput} from '@ohrm/oxd';
 
 const CandidateProfileModel = {
@@ -231,8 +229,8 @@ export default {
     'oxd-switch-input': OxdSwitchInput,
     'full-name-input': FullNameInput,
     'vacancy-dropdown': VacancyDropdown,
-    'file-upload-input': FileUploadInput,
     'confirmation-dialog': ConfirmationDialog,
+    'oxd-multiple-files-input': OxdMultipleFilesInput,
   },
   props: {
     candidate: {
@@ -270,6 +268,7 @@ export default {
       profile: {...CandidateProfileModel},
       vacancy: {...VacancyModel},
       attachment: {...CandidateAttachmentModel},
+      attachments: [],
       rules: {
         firstName: [required, shouldNotExceedCharLength(30)],
         lastName: [required, shouldNotExceedCharLength(30)],
@@ -279,8 +278,8 @@ export default {
         keywords: [shouldNotExceedCharLength(250)],
         applicationDate: [validDateFormat(this.userDateFormat)],
         resume: [
-          maxFileSize(this.maxFileSize),
-          validFileTypes(this.allowedFileTypes),
+          maxFilesSize(this.maxFileSize),
+          validFilesTypes(this.allowedFileTypes),
         ],
       },
     };
@@ -315,7 +314,7 @@ export default {
           data: {...this.profile, vacancyId: this.vacancy?.id},
         })
         .then(() => {
-          if (this.attachment.newAttachment || this.candidate.hasAttachment) {
+          if (this.candidate.hasAttachment) {
             return this.http.request({
               method: 'PUT',
               url: `/api/v2/recruitment/candidate/${this.candidate.id}/attachment`,
@@ -374,15 +373,14 @@ export default {
             url: `/api/v2/recruitment/candidate/${this.candidate.id}/attachment`,
           })
           .then(({data: {data}}) => {
-            this.attachment.id = data.id;
-            this.attachment.newAttachment = null;
-            this.attachment.oldAttachment = {
-              id: data.id,
-              filename: data.attachment.fileName,
-              fileType: data.attachment.fileType,
-              fileSize: data.attachment.fileSize,
-            };
-            this.attachment.method = 'keepCurrent';
+            this.attachments = data
+              .filter((attachment) => Object.keys(attachment).includes('id'))
+              .map((attachment) => ({
+                name: attachment.fileName,
+                type: attachment.fileType,
+                size: +attachment.fileSize,
+                base64: attachment.fileContent,
+              }));
           });
       } else {
         this.attachment = {...CandidateAttachmentModel};
