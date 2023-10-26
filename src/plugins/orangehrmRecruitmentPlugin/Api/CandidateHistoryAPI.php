@@ -54,7 +54,7 @@ class CandidateHistoryAPI extends Endpoint implements CrudEndpoint
     public const PARAMETER_HISTORY_ID = 'historyId';
     public const PARAMETER_NOTE = 'note';
 
-    public const PARAMETER_RULE_NOTE_MAX_LENGTH = 2000;
+    public const PARAMETER_RULE_NOTE_MAX_LENGTH = 5000;
 
     /**
      * @inheritDoc

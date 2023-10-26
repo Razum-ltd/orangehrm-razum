@@ -20,10 +20,18 @@
 
 <template>
   <div class="orangehrm-card-container">
-    <oxd-form :loading="isLoading">
+    <div class="orangehrm-header-container">
       <oxd-text tag="h6" class="orangehrm-main-title">
         {{ $t('recruitment.application_stage') }}
       </oxd-text>
+      <oxd-switch-input
+        v-if="!isLoading"
+        v-model="editable"
+        :option-label="$t('general.edit')"
+        label-position="left"
+      />
+    </div>
+    <oxd-form :loading="isLoading">
       <oxd-divider />
       <oxd-grid :cols="3" class="orangehrm-full-width-grid">
         <oxd-grid-item>
@@ -49,6 +57,24 @@
         </oxd-grid-item>
       </oxd-grid>
       <oxd-divider />
+      <oxd-grid v-if="editable" :cols="1">
+        <oxd-grid-item>
+          <candidate-status-dropdown
+            v-model="candidateStatus"
+            :label="$t('general.status')"
+          />
+        </oxd-grid-item>
+        <oxd-grid-item>
+          <oxd-button
+            :label="$t('general.replace_current')"
+            :style="{'margin-top': '1rem'}"
+            display-type="success"
+            :disabled="!candidateStatus || !candidateStatus.id"
+            @click="saveCandidateStatus"
+          />
+        </oxd-grid-item>
+      </oxd-grid>
+      <oxd-divider v-if="editable" />
       <div class="orangehrm-recruitment">
         <div v-if="recruitmentStatus" class="orangehrm-recruitment-status">
           <oxd-text type="subtitle-2">
@@ -114,9 +140,15 @@
 import {navigate} from '@/core/util/helper/navigation';
 import {APIService} from '@/core/util/services/api.service';
 import useEmployeeNameTranslate from '@/core/util/composable/useEmployeeNameTranslate';
+import {OxdSwitchInput} from '@ohrm/oxd';
+import CandidateStatusDropdown from './CandidateStatusDropdown.vue';
 
 export default {
   name: 'RecruitmentStatus',
+  components: {
+    'oxd-switch-input': OxdSwitchInput,
+    'candidate-status-dropdown': CandidateStatusDropdown,
+  },
   props: {
     candidate: {
       type: Object,
@@ -138,6 +170,8 @@ export default {
   data() {
     return {
       isLoading: false,
+      editable: false,
+      candidateStatus: null,
       statuses: [
         {id: 1, label: this.$t('recruitment.application_initiated')},
         {id: 2, label: this.$t('recruitment.shortlisted')},
@@ -202,6 +236,9 @@ export default {
         },
       );
     },
+    saveCandidateStatus() {
+      this.doWorkflow(this.candidateStatus.id);
+    },
     getAllowedActions() {
       this.isLoading = true;
       this.http
@@ -222,6 +259,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.orangehrm-header-container {
+  padding: 0;
+}
 .orangehrm-recruitment {
   display: flex;
   justify-content: space-between;

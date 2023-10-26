@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * OrangeHRM is a comprehensive Human Resource Management (HRM) System that captures
  * all the essential functionalities required for any enterprise.
@@ -41,7 +42,6 @@ export type File = {
  * @returns {boolean|string}
  */
 export const required = function (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: string | number | Array<any>,
 ): boolean | string {
   if (typeof value === 'string') {
@@ -68,6 +68,10 @@ export const shouldNotExceedCharLength = function (charLength: number) {
       translate('general.should_be_less_n_characters', {amount: charLength})
     );
   };
+};
+
+export const generateRecruitmentNoteValidation = () => {
+  return [shouldNotExceedCharLength(5000)];
 };
 
 export const validDateFormat = function (
@@ -353,6 +357,33 @@ export const validFileTypes = function (fileTypes: string[]) {
     return (
       file === null ||
       (file && fileTypes.findIndex((item) => item === file.type) > -1) ||
+      translate('general.file_type_not_allowed')
+    );
+  };
+};
+
+/**
+ * @param {number} size - File size in bytes
+ */
+export const maxFilesSize = function (size: number) {
+  return function (files: File[]): boolean | string {
+    return files && files.length > 0 && files.find((file) => file.size > size)
+      ? translate('general.attachment_size_exceeded')
+      : true;
+  };
+};
+
+/**
+ * @param fileTypes - Array of file types
+ */
+export const validFilesTypes = function (fileTypes: string[]) {
+  return function (files: File[]): boolean | string {
+    return (
+      files === null ||
+      (files.length > 0 &&
+        files.findIndex(
+          (file) => fileTypes.findIndex((item) => item === file.type) === -1,
+        ) === -1) ||
       translate('general.file_type_not_allowed')
     );
   };

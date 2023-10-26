@@ -107,6 +107,7 @@ import {
   validDateFormat,
   validTimeFormat,
   shouldNotExceedCharLength,
+  generateRecruitmentNoteValidation,
 } from '@/core/util/validation/rules';
 import {navigate} from '@/core/util/helper/navigation';
 import {APIService} from '@/core/util/services/api.service';
@@ -165,7 +166,7 @@ export default {
               : this.$t('general.already_exists');
           },
         ],
-        note: [shouldNotExceedCharLength(2000)],
+        note: generateRecruitmentNoteValidation(),
       },
     };
   },

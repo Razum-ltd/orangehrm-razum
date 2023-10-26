@@ -69,7 +69,7 @@ class ConfigService
     public const KEY_OAUTH_REFRESH_TOKEN_TTL = 'oauth.refresh_token_ttl';
     public const KEY_OAUTH_ACCESS_TOKEN_TTL = 'oauth.access_token_ttl';
 
-    public const MAX_ATTACHMENT_SIZE = 1048576; // 1 MB
+    public const MAX_ATTACHMENT_SIZE = 2097152; // 2 MB - 2 * 1024 * 1024
     public const ALLOWED_FILE_TYPES = [
         'text/plain',
         'text/rtf',

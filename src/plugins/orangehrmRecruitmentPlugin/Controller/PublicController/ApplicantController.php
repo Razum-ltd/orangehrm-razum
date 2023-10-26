@@ -47,6 +47,7 @@ use OrangeHRM\Framework\Http\Request;
 use OrangeHRM\Framework\Http\Response;
 use OrangeHRM\Recruitment\Api\CandidateAPI;
 use OrangeHRM\Recruitment\Service\CandidateService;
+use OrangeHRM\Recruitment\Service\RecruitmentAttachmentService;
 use OrangeHRM\Recruitment\Traits\Service\CandidateServiceTrait;
 use OrangeHRM\Recruitment\Traits\Service\RecruitmentAttachmentServiceTrait;
 use OrangeHRM\Recruitment\Traits\Service\VacancyServiceTrait;
@@ -73,6 +74,7 @@ class ApplicantController extends AbstractController implements PublicController
     public const PARAMETER_KEYWORDS = 'keywords';
     public const PARAMETER_COMMENT = 'comment';
     public const PARAMETER_CONSENT_TO_KEEP_DATA = 'consentToKeepData';
+    public const PARAM_RULE_FILE_NAME_MAX_LENGTH = 255;
 
     /**
      * @var ValidationDecorator|null
@@ -85,22 +87,32 @@ class ApplicantController extends AbstractController implements PublicController
      */
     public function handle(Request $request)
     {
-        /** @var UploadedFile|null $file */
-        $file = $request->files->get(self::PARAMETER_RESUME);
-        if (!$file instanceof UploadedFile) {
+        /** @var array|null $file */
+        $resumeFiles = $request->files->all();
+        if (!isset($resumeFiles[self::PARAMETER_RESUME])) {
             return $this->handleBadRequest();
         }
-        $attachment = Base64Attachment::createFromUploadedFile($file);
-        if (!$this->validateParameters($request, $attachment)) {
+
+        $attachments = [];
+        foreach ($resumeFiles[self::PARAMETER_RESUME] as $file) {
+            if (!$file instanceof UploadedFile) {
+                return $this->handleBadRequest();
+            }
+
+            $attachment = Base64Attachment::createFromUploadedFile($file);
+            $attachments[] = $attachment;
+        }
+        if (!$this->validateParameters($request, $attachments)) {
             return $this->handleBadRequest();
         }
 
         $this->beginTransaction();
         try {
             $vacancyId = $request->request->get(self::PARAMETER_VACANCY_ID);
-            $this->processTransaction($request, $attachment, $vacancyId);
+            $this->processTransaction($request, $attachments, $vacancyId);
             $this->commitTransaction();
-            return $this->redirect("/recruitmentApply/applyVacancy/id/$vacancyId?success=true");
+            // return $this->redirect("/recruitmentApply/applyVacancy/id/$vacancyId?success=true");
+            return $this->redirect("/recruitmentApply/applyVacancy/id/$vacancyId");
         } catch (Exception $e) {
             $this->rollBackTransaction();
             $this->getLogger()->error($e->getMessage());
@@ -111,21 +123,23 @@ class ApplicantController extends AbstractController implements PublicController
 
     /**
      * @param Request $request
-     * @param Base64Attachment $attachment
+     * @param array[Base64Attachment] $attachments
      * @return bool|null
      * @throws ValidatorException
      */
-    private function validateParameters(Request $request, Base64Attachment $attachment): ?bool
+    private function validateParameters(Request $request, array $attachments): ?bool
     {
         $variables = $request->request->all();
         $variables[self::PARAMETER_CONSENT_TO_KEEP_DATA] = $request->request
             ->getBoolean(self::PARAMETER_CONSENT_TO_KEEP_DATA);
-        $variables[self::PARAMETER_RESUME] = [
-            'name' => $attachment->getFilename(),
-            'type' => $attachment->getFileType(),
-            'base64' => $attachment->getBase64Content(),
-            'size' => $attachment->getSize(),
-        ];
+        $variables[self::PARAMETER_RESUME] = array_map(function ($attachment) {
+            return $attachment instanceof Base64Attachment ? [
+                'name' => $attachment->getFilename(),
+                'type' => $attachment->getFileType(),
+                'base64' => $attachment->getBase64Content(),
+                'size' => $attachment->getSize(),
+            ] : null;
+        }, $attachments);
         $paramRules = $this->getParamRuleCollection();
         $paramRules->addExcludedParamKey('_token');
 
@@ -145,11 +159,11 @@ class ApplicantController extends AbstractController implements PublicController
 
     /**
      * @param Request $request
-     * @param Base64Attachment $attachment
+     * @param array[Base64Attachment] $attachments
      * @param int $vacancyId
      * @return void
      */
-    private function processTransaction(Request $request, Base64Attachment $attachment, int $vacancyId): void
+    private function processTransaction(Request $request, array $attachments, int $vacancyId): void
     {
         $applicant = new Candidate();
         $this->setApplicant($applicant, $request);
@@ -173,11 +187,13 @@ class ApplicantController extends AbstractController implements PublicController
         $applicantHistory->setCandidateVacancyName($applicantVacancy->getVacancy()->getName());
         $this->getCandidateService()->getCandidateDao()->saveCandidateHistory($applicantHistory);
 
-        $applicantAttachment = new CandidateAttachment();
-        $this->setCandidateAttachment($applicantAttachment, $applicantId, $attachment);
-        $this->getRecruitmentAttachmentService()
-            ->getRecruitmentAttachmentDao()
-            ->saveCandidateAttachment($applicantAttachment);
+        foreach ($attachments as $attachment) {
+            $applicantAttachment = new CandidateAttachment();
+            $this->setCandidateAttachment($applicantAttachment, $applicantId, $attachment);
+            $this->getRecruitmentAttachmentService()
+                ->getRecruitmentAttachmentDao()
+                ->saveCandidateAttachment($applicantAttachment);
+        }
     }
 
     /**
@@ -240,7 +256,22 @@ class ApplicantController extends AbstractController implements PublicController
         return new ParamRuleCollection(
             new ParamRule(
                 self::PARAMETER_RESUME,
-                new Rule(Rules::BASE_64_ATTACHMENT)
+                new Rule(Rules::ARRAY_TYPE),
+                new Rule(
+                    Rules::EACH,
+                    [
+                        new Rules\Composite\AllOf(
+                            new Rule(
+                                Rules::BASE_64_ATTACHMENT,
+                                [
+                                    RecruitmentAttachmentService::ALLOWED_CANDIDATE_ATTACHMENT_FILE_TYPES,
+                                    null,
+                                    self::PARAM_RULE_FILE_NAME_MAX_LENGTH
+                                ]
+                            ),
+                        )
+                    ]
+                )
             ),
             new ParamRule(
                 self::PARAMETER_FIRST_NAME,

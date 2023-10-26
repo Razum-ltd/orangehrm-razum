@@ -85,7 +85,7 @@ export default {
       isLoading: false,
       note: null,
       rules: {
-        note: [shouldNotExceedCharLength(2000)],
+        note: [shouldNotExceedCharLength(5000)],
       },
     };
   },

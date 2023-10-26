@@ -21,6 +21,7 @@
 namespace OrangeHRM\Recruitment\Dao;
 
 use OrangeHRM\Core\Dao\BaseDao;
+use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Entity\CandidateAttachment;
 use OrangeHRM\Entity\InterviewAttachment;
 use OrangeHRM\Entity\InterviewInterviewer;
@@ -32,6 +33,8 @@ use OrangeHRM\Recruitment\Dto\RecruitmentAttachment;
 
 class RecruitmentAttachmentDao extends BaseDao
 {
+    use LoggerTrait;
+
     /**
      * @param VacancyAttachment $vacancyAttachment
      * @return VacancyAttachment
@@ -86,7 +89,22 @@ class RecruitmentAttachmentDao extends BaseDao
         $qb->select($select);
         $qb->where('candidateAttachment.candidate = :candidateId');
         $qb->setParameter('candidateId', $candidateId);
+        $qb->setMaxResults(1);
         return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    /**
+     * @param int $candidateId
+     * @return array|null
+     */
+    public function getCandidateAttachmentsByCandidateId(int $candidateId): ?array
+    {
+        $qb = $this->createQueryBuilder(CandidateAttachment::class, 'candidateAttachment');
+        $qb->where('candidateAttachment.candidate = :candidateId');
+        $qb->setParameter('candidateId', $candidateId);
+        $qb->orderBy('candidateAttachment.fileName', ListSorter::ASCENDING);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -98,6 +116,7 @@ class RecruitmentAttachmentDao extends BaseDao
         $qb = $this->createQueryBuilder(CandidateAttachment::class, 'candidateAttachment');
         $qb->where('candidateAttachment.candidate = :candidateId');
         $qb->setParameter('candidateId', $candidateId);
+        $qb->setMaxResults(1);
         return $qb->getQuery()->getOneOrNullResult();
     }
 

@@ -56,7 +56,7 @@
 <script>
 import {navigate} from '@/core/util/helper/navigation';
 import {APIService} from '@/core/util/services/api.service';
-import {shouldNotExceedCharLength} from '@/core/util/validation/rules';
+import {generateRecruitmentNoteValidation} from '@/core/util/validation/rules';
 import CandidateActionLayout from '@/orangehrmRecruitmentPlugin/components/CandidateActionLayout.vue';
 
 export default {
@@ -85,7 +85,7 @@ export default {
       isLoading: false,
       note: null,
       rules: {
-        note: [shouldNotExceedCharLength(2000)],
+        note: generateRecruitmentNoteValidation(),
       },
     };
   },

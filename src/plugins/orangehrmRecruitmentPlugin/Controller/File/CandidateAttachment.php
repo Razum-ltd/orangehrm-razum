@@ -23,6 +23,7 @@ use OrangeHRM\Core\Controller\AbstractFileController;
 use OrangeHRM\Framework\Http\Request;
 use OrangeHRM\Framework\Http\Response;
 use OrangeHRM\Recruitment\Traits\Service\RecruitmentAttachmentServiceTrait;
+use ZipArchive;
 
 class CandidateAttachment extends AbstractFileController
 {
@@ -34,10 +35,12 @@ class CandidateAttachment extends AbstractFileController
         $response = $this->getResponse();
 
         if ($candidateId) {
-            $attachment = $this->getRecruitmentAttachmentService()
+            // instead of just one attachment we need to get all attachments
+            $attachments = $this->getRecruitmentAttachmentService()
                 ->getRecruitmentAttachmentDao()
-                ->getCandidateAttachmentByCandidateId($candidateId);
-            if ($attachment instanceof \OrangeHRM\Entity\CandidateAttachment) {
+                ->getCandidateAttachmentsByCandidateId($candidateId);
+            if (count($attachments) === 1) {
+                $attachment = $attachments[0];
                 $this->setCommonHeadersToResponse(
                     $attachment->getFileName(),
                     $attachment->getFileType(),
@@ -45,6 +48,40 @@ class CandidateAttachment extends AbstractFileController
                     $response
                 );
                 $response->setContent($attachment->getDecorator()->getFileContent());
+                return $response;
+            } elseif (count($attachments) > 1) {
+                // if there are more than one attachment we need to zip them
+                while (ob_get_level()) {
+                    ob_end_clean(); // remove output buffers
+                }
+
+                /** @var \OrangeHRM\Entity\Candidate $candidate */
+                $candidate = $attachments[0]->getCandidate();
+                $fileName = $candidate->getFirstName() . '_' . $candidate->getLastName() . '_attachments.zip';
+
+                $response->headers->set('Content-Type', 'application/zip');
+                $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                $response->headers->set('Pragma', 'public');
+                $response->headers->set('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+                $response->headers->set('Expires', '0');
+                $response->headers->set("Content-Transfer-Encoding", "binary");
+
+                // create tmp zip file
+                $tmpZipFile = tempnam(sys_get_temp_dir(), 'zip');
+                // Create a new tmp zip archive
+                $zip = new ZipArchive();
+                $zip->open($tmpZipFile, ZipArchive::CREATE);
+                $zip->setCompressionIndex(0, ZipArchive::CM_STORE); // no compression
+                foreach ($attachments as $attachment) {
+                    $fileContent = $attachment->getDecorator()->getFileContent();
+                    $zip->addFromString($attachment->getFileName(), $fileContent);
+                }
+
+                $zip->setArchiveComment('Created on ' . date('Y-M-d'));
+                $zip->close();
+                // read tmp zip file and send it to the client
+                $response->setContent(file_get_contents($tmpZipFile));
+                unlink($tmpZipFile);
                 return $response;
             }
         }

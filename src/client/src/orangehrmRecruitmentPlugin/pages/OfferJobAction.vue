@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import {shouldNotExceedCharLength} from '@/core/util/validation/rules';
+import {generateRecruitmentNoteValidation} from '@/core/util/validation/rules';
 import CandidateActionLayout from '@/orangehrmRecruitmentPlugin/components/CandidateActionLayout';
 import {APIService} from '@/core/util/services/api.service';
 import {navigate} from '@/core/util/helper/navigation';
@@ -85,7 +85,7 @@ export default {
       isLoading: false,
       note: null,
       rules: {
-        note: [shouldNotExceedCharLength(2000)],
+        note: generateRecruitmentNoteValidation(),
       },
     };
   },
