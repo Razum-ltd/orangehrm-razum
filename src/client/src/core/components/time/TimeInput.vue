@@ -1,5 +1,8 @@
 <template>
   <div v-click-outside="onFocusOut" :class="classes">
+    <div v-if="label" class="oxd-label-wrapper">
+      <oxd-label :label="label" />
+    </div>
     <div class="oxd-time-input">
       <oxd-input
         ref="oxdInput"
@@ -27,7 +30,7 @@ import {defineComponent} from 'vue';
 import {formatDate, parseDate} from '../../util/helper/datefns';
 import type {ComponentPublicInstance} from 'vue';
 import TimePicker from './TimePicker.vue';
-import {clickOutsideDirective, OxdIcon, OxdInput} from '@ohrm/oxd';
+import {clickOutsideDirective, OxdIcon, OxdInput, OxdLabel} from '@ohrm/oxd';
 
 export default defineComponent({
   name: 'OxdTimeInput',
@@ -35,6 +38,7 @@ export default defineComponent({
   components: {
     'oxd-icon': OxdIcon,
     'oxd-input': OxdInput,
+    'oxd-label': OxdLabel,
     'time-picker': TimePicker,
   },
 
@@ -80,6 +84,11 @@ export default defineComponent({
         'oxd-time-wrapper': true,
         'oxd-input-field-bottom-space': true,
       }),
+    },
+    label: {
+      type: String,
+      required: false,
+      default: null,
     },
   },
 
