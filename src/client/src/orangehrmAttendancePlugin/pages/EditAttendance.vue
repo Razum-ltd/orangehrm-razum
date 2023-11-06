@@ -56,7 +56,7 @@
                 </oxd-grid-item>
 
                 <oxd-grid-item class="--offset-row-2">
-                  <oxd-input-field
+                  <time-input
                     v-model="attendance.punchIn.userTime"
                     :label="$t('general.time')"
                     :rules="rules.punchIn.userTime"
@@ -109,7 +109,7 @@
                 </oxd-grid-item>
 
                 <oxd-grid-item class="--offset-row-2">
-                  <oxd-input-field
+                  <time-input
                     v-model="attendance.punchOut.userTime"
                     :label="$t('general.time')"
                     :rules="rules.punchOut.userTime"
@@ -170,6 +170,7 @@ import {APIService} from '@/core/util/services/api.service';
 import {promiseDebounce} from '@ohrm/oxd';
 import useDateFormat from '@/core/util/composable/useDateFormat';
 import TimezoneDropdown from '@/orangehrmAttendancePlugin/components/TimezoneDropdown.vue';
+import TimeInput from '../../core/components/time/TimeInput.vue';
 
 const attendanceRecordModal = {
   userDate: null,
@@ -184,6 +185,7 @@ const attendanceRecordModal = {
 export default {
   components: {
     'timezone-dropdown': TimezoneDropdown,
+    'time-input': TimeInput,
   },
   props: {
     attendanceId: {
