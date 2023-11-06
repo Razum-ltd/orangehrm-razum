@@ -65,7 +65,7 @@
 
         <!-- Time  Selector -->
         <oxd-grid-item class="--offset-row-2">
-          <oxd-input-field
+          <time-input
             v-model="attendanceRecord.time"
             :label="$t('general.time')"
             :disabled="!isEditable"
@@ -133,6 +133,7 @@ import {APIService} from '@ohrm/core/util/services/api.service';
 import useDateFormat from '@/core/util/composable/useDateFormat';
 import {reloadPage, navigate} from '@/core/util/helper/navigation';
 import TimezoneDropdown from '@/orangehrmAttendancePlugin/components/TimezoneDropdown.vue';
+import TimeInput from '../../core/components/time/TimeInput.vue';
 
 const attendanceRecordModal = {
   date: null,
@@ -146,6 +147,7 @@ export default {
   name: 'RecordAttendance',
   components: {
     'timezone-dropdown': TimezoneDropdown,
+    'time-input': TimeInput,
   },
   props: {
     isEditable: {
