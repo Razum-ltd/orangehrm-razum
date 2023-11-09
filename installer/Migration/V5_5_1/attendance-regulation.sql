@@ -1,0 +1,1 @@
+ALTER TABLE `ohrm_attendance_record` ADD `attendance_type` VARCHAR(255) DEFAULT 'WORK_TIME';

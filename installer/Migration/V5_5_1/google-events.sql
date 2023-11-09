@@ -1,0 +1,1 @@
+ALTER TABLE `ohrm_leave` ADD `google_event_id` VARCHAR(255) DEFAULT NULL;

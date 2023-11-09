@@ -11,9 +11,28 @@ class Migration extends AbstractMigration
      */
     public function up(): void
     {
-        // Leave table modification for google event id
-        $this->getConnection()
-            ->executeStatement("ALTER TABLE orangehrm.ohrm_leave ADD google_event_id varchar(255) DEFAULT NULL NULL;");
+        $this->execSqlFile('google-events.sql');
+        $this->execSqlFile('attendance-regulation.sql');
+    }
+
+    private function execSqlFile(string $fileName): void
+    {
+        $script = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . $fileName);
+        $dbScriptStatements = preg_split('/;\s*$/m', $script);
+
+        if ($dbScriptStatements) {
+            foreach ($dbScriptStatements as $statement) {
+                if (empty(trim($statement))) {
+                    continue;
+                }
+                try {
+                    $this->getConnection()->executeStatement($statement);
+                } catch (\Doctrine\DBAL\Exception\NonUniqueFieldNameException $e) {
+                    // Log the error message and continue with the next statement
+                    error_log($e->getMessage());
+                }
+            }
+        }
     }
 
     /**
