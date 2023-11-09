@@ -28,6 +28,7 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     schema="Attendance-AttendanceRecordModel",
  *     type="object",
  *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="attendance_type", type="string"),
  *     @OA\Property(
  *         property="punchIn",
  *         type="object",
@@ -90,6 +91,7 @@ class AttendanceRecordModel implements Normalizable
                 'punchOutTimeOffset',
                 'punchOutNote',
                 'state',
+                'attendanceType',
                 ['getDecorator', 'getAttendanceState'],
                 ['getEmployee', 'getEmpNumber'],
                 ['getEmployee', 'getLastName'],
@@ -102,6 +104,7 @@ class AttendanceRecordModel implements Normalizable
         $this->setAttributeNames(
             [
                 'id',
+                'attendanceType',
                 ['punchIn', 'utcDate'],
                 ['punchIn', 'utcTime'],
                 ['punchIn', 'userDate'],
