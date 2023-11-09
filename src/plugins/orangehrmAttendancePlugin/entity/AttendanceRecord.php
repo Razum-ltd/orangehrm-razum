@@ -41,6 +41,12 @@ class AttendanceRecord
     public const STATE_INITIAL = "INITIAL";
     public const STATE_NA = "NA";
 
+    public const ATTENDANCE_TYPE_WORK_TIME = "WORK_TIME";
+    public const ATTENDANCE_TYPE_BREAK_TIME = "BREAK_TIME";
+    public const ATTENDANCE_TYPE_OVER_TIME = "OVER_TIME";
+    public const ATTENDANCE_TYPE_OFF_TIME = "OFF_TIME";
+    public const ATTENDANCE_TYPE_HOLIDAY = "HOLIDAY";
+
     /**
      * @var int
      *
@@ -135,6 +141,14 @@ class AttendanceRecord
      * @ORM\Column(name="state", type="string", length=255, nullable=false)
      */
     private string $state;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="attendance_type", type="string", length=255, nullable=false)
+     */
+    private string $attendanceType;
+
 
     /**
      * @return int
@@ -342,5 +356,21 @@ class AttendanceRecord
     public function setPunchOutTimezoneName(?string $punchOutTimezoneName): void
     {
         $this->punchOutTimezoneName = $punchOutTimezoneName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAttendanceType(): string
+    {
+        return $this->attendanceType;
+    }
+
+    /**
+     * @param  string  $attendanceType
+     */
+    public function setAttendanceType(string $attendanceType): void
+    {
+        $this->attendanceType = $attendanceType;
     }
 }
