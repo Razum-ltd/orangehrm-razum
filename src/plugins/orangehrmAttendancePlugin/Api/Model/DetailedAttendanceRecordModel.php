@@ -28,6 +28,7 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     schema="Attendance-DetailedAttendanceRecordModel",
  *     type="object",
  *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="attendance_type", type="string"),
  *     @OA\Property(
  *         property="punchIn",
  *         type="object",
@@ -88,6 +89,7 @@ class DetailedAttendanceRecordModel implements Normalizable
         $this->setFilters(
             [
                 'id',
+                'attendanceType',
                 ['getDecorator', 'getPunchInUTCDate'],
                 ['getDecorator', 'getPunchInUTCTime'],
                 ['getDecorator', 'getPunchInUserDate'],
@@ -117,6 +119,7 @@ class DetailedAttendanceRecordModel implements Normalizable
         $this->setAttributeNames(
             [
                 'id',
+                'attendanceType',
                 ['punchIn', 'utcDate'],
                 ['punchIn', 'utcTime'],
                 ['punchIn', 'userDate'],
