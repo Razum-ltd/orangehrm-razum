@@ -103,6 +103,13 @@
     <oxd-divider />
     <oxd-form-actions>
       <required-text />
+      <oxd-button>
+        {{
+          !attendanceRecordId
+            ? $t('attendance.break_start')
+            : $t('attendance.break_over')
+        }}
+      </oxd-button>
       <submit-button
         :label="
           !attendanceRecordId ? $t('attendance.in') : $t('attendance.out')
