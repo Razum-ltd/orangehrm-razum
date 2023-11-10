@@ -252,7 +252,7 @@ class I18NService
             $this->getETagByLangCode($langCode);
             $cacheItem = $this->getCache()->getItem($cacheItem->getKey());
         }
-        return is_null($cacheItem->get()) ? array($cacheItem->getKey()) : $cacheItem->get();
+        return is_null($cacheItem->get()) ? [$cacheItem->getKey()] : $cacheItem->get();
     }
 
     /**

@@ -28,7 +28,6 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     schema="Attendance-EmployeeLatestAttendanceRecordModel",
  *     type="object",
  *     @OA\Property(property="id", type="integer"),
- *     @OA\Property(property="attendance_type", type="string"),
  *     @OA\Property(property="punchIn", type="object",
  *         @OA\Property(property="utcDate", type="string", format="date"),
  *         @OA\Property(property="utcTime", type="string", format="time"),
@@ -46,6 +45,10 @@ use OrangeHRM\Entity\AttendanceRecord;
  *         @OA\Property(property="note", type="string")
  *     ),
  *     @OA\Property(property="state", type="object",
+ *         @OA\Property(property="id", type="string"),
+ *         @OA\Property(property="name", type="string")
+ *     ),
+ *     @OA\Property(property="attendanceType", type="object",
  *         @OA\Property(property="id", type="string"),
  *         @OA\Property(property="name", type="string")
  *     ),
@@ -69,7 +72,6 @@ class EmployeeLatestAttendanceRecordModel implements Normalizable
         $this->setFilters(
             [
                 'id',
-                'attendanceType',
                 ['getDecorator', 'getPunchInUTCDate'],
                 ['getDecorator', 'getPunchInUTCTime'],
                 ['getDecorator', 'getPunchInUserDate'],
@@ -84,6 +86,8 @@ class EmployeeLatestAttendanceRecordModel implements Normalizable
                 'punchOutNote',
                 'state',
                 ['getDecorator', 'getAttendanceState'],
+                'attendanceType',
+                ['getDecorator', 'getAttendanceType'],
                 ['getEmployee', 'getEmpNumber'],
                 ['getEmployee', 'getLastName'],
                 ['getEmployee', 'getFirstName'],
@@ -95,7 +99,6 @@ class EmployeeLatestAttendanceRecordModel implements Normalizable
         $this->setAttributeNames(
             [
                 'id',
-                'attendanceType',
                 ['punchIn', 'utcDate'],
                 ['punchIn', 'utcTime'],
                 ['punchIn', 'userDate'],
@@ -110,6 +113,8 @@ class EmployeeLatestAttendanceRecordModel implements Normalizable
                 ['punchOut', 'note'],
                 ['state', 'id'],
                 ['state', 'name'],
+                ['attendanceType', 'id'],
+                ['attendanceType', 'name'],
                 ['employee', 'empNumber'],
                 ['employee', 'lastName'],
                 ['employee', 'firstName'],

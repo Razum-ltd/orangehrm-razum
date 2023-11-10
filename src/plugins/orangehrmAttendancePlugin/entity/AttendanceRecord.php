@@ -359,9 +359,9 @@ class AttendanceRecord
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getAttendanceType(): string
+    public function getAttendanceType(): ?string
     {
         return $this->attendanceType;
     }
