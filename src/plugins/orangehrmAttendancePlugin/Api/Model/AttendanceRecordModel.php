@@ -28,7 +28,6 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     schema="Attendance-AttendanceRecordModel",
  *     type="object",
  *     @OA\Property(property="id", type="integer"),
- *     @OA\Property(property="attendance_type", type="string"),
  *     @OA\Property(
  *         property="punchIn",
  *         type="object",
@@ -51,6 +50,12 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     ),
  *     @OA\Property(
  *         property="state",
+ *         type="object",
+ *         @OA\Property(property="id", type="string"),
+ *         @OA\Property(property="name", type="string"),
+ *     ),
+ *     @OA\Property(
+ *         property="attendanceType",
  *         type="object",
  *         @OA\Property(property="id", type="string"),
  *         @OA\Property(property="name", type="string"),
@@ -91,8 +96,9 @@ class AttendanceRecordModel implements Normalizable
                 'punchOutTimeOffset',
                 'punchOutNote',
                 'state',
-                'attendanceType',
                 ['getDecorator', 'getAttendanceState'],
+                'attendanceType',
+                ['getDecorator', 'getAttendanceType'],
                 ['getEmployee', 'getEmpNumber'],
                 ['getEmployee', 'getLastName'],
                 ['getEmployee', 'getFirstName'],
@@ -104,7 +110,6 @@ class AttendanceRecordModel implements Normalizable
         $this->setAttributeNames(
             [
                 'id',
-                'attendanceType',
                 ['punchIn', 'utcDate'],
                 ['punchIn', 'utcTime'],
                 ['punchIn', 'userDate'],
@@ -119,6 +124,8 @@ class AttendanceRecordModel implements Normalizable
                 ['punchOut', 'note'],
                 ['state', 'id'],
                 ['state', 'name'],
+                ['attendanceType', 'id'],
+                ['attendanceType', 'name'],
                 ['employee', 'empNumber'],
                 ['employee', 'lastName'],
                 ['employee', 'firstName'],

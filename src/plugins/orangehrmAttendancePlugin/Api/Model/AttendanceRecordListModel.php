@@ -72,7 +72,6 @@ class AttendanceRecordListModel implements CollectionNormalizable, ModelConstruc
         foreach ($this->attendanceRecords as $employeeAttendanceRecord) {
             $result[] = [
                 'id' => $employeeAttendanceRecord['id'],
-                'attendanceType' => $employeeAttendanceRecord['attendanceType'],
                 'punchIn' => [
                     'userDate' => $this->getDateTimeHelper()->formatDateTimeToYmd(
                         $employeeAttendanceRecord['punchInTime']

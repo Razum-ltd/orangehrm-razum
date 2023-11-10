@@ -1,11 +1,11 @@
 <?php
+
 namespace OrangeHRM\Time\Service;
 
 class AttendanceCorrectionService
 {
     public function __construct()
     {
-
     }
     public function run()
     {
@@ -22,8 +22,7 @@ class AttendanceCorrectionService
     private function correctEmployeeAttendanceIfEmployeeHasLeaveForToday(
         $employeeLeavesForToday,
         $employeeAttendanceRecordsForToday
-    )
-    {
+    ) {
         // correct employee attendance if employee has leave for today
         foreach ($employeeLeavesForToday as $employeeLeaveForToday) {
             foreach ($employeeAttendanceRecordsForToday as $employeeAttendanceRecordForToday) {

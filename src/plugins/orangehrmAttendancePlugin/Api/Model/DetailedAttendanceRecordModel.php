@@ -28,7 +28,6 @@ use OrangeHRM\Entity\AttendanceRecord;
  *     schema="Attendance-DetailedAttendanceRecordModel",
  *     type="object",
  *     @OA\Property(property="id", type="integer"),
- *     @OA\Property(property="attendance_type", type="string"),
  *     @OA\Property(
  *         property="punchIn",
  *         type="object",
@@ -68,6 +67,12 @@ use OrangeHRM\Entity\AttendanceRecord;
  *         @OA\Property(property="name", type="string"),
  *     ),
  *     @OA\Property(
+ *         property="attendanceType",
+ *         type="object",
+ *         @OA\Property(property="id", type="string"),
+ *         @OA\Property(property="name", type="string"),
+ *     ),
+ *     @OA\Property(
  *         property="employee",
  *         type="object",
  *         @OA\Property(property="empNumber", type="integer"),
@@ -89,7 +94,6 @@ class DetailedAttendanceRecordModel implements Normalizable
         $this->setFilters(
             [
                 'id',
-                'attendanceType',
                 ['getDecorator', 'getPunchInUTCDate'],
                 ['getDecorator', 'getPunchInUTCTime'],
                 ['getDecorator', 'getPunchInUserDate'],
@@ -108,6 +112,8 @@ class DetailedAttendanceRecordModel implements Normalizable
                 'punchOutNote',
                 'state',
                 ['getDecorator', 'getAttendanceState'],
+                'attendanceType',
+                ['getDecorator', 'getAttendanceType'],
                 ['getEmployee', 'getEmpNumber'],
                 ['getEmployee', 'getLastName'],
                 ['getEmployee', 'getFirstName'],
@@ -119,7 +125,6 @@ class DetailedAttendanceRecordModel implements Normalizable
         $this->setAttributeNames(
             [
                 'id',
-                'attendanceType',
                 ['punchIn', 'utcDate'],
                 ['punchIn', 'utcTime'],
                 ['punchIn', 'userDate'],
@@ -138,6 +143,8 @@ class DetailedAttendanceRecordModel implements Normalizable
                 ['punchOut', 'note'],
                 ['state', 'id'],
                 ['state', 'name'],
+                ['attendanceType', 'id'],
+                ['attendanceType', 'name'],
                 ['employee', 'empNumber'],
                 ['employee', 'lastName'],
                 ['employee', 'firstName'],

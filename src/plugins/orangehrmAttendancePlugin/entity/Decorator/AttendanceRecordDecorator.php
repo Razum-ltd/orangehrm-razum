@@ -68,6 +68,11 @@ class AttendanceRecordDecorator
         return ucwords(strtolower($this->getAttendanceRecord()->getState()));
     }
 
+    public function getAttendanceType(): string
+    {
+        return str_replace("_", " ", ucwords(strtolower($this->getAttendanceRecord()->getAttendanceType())));
+    }
+
     /**
      * @return string|null
      */
