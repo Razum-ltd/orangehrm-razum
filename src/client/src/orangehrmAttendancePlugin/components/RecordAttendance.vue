@@ -104,6 +104,11 @@
     <oxd-form-actions>
       <required-text />
       <oxd-button
+        v-if="
+          (attendanceRecord.previousRecord &&
+            attendanceRecord.previousRecord.note === 'BREAK') ||
+          !attendanceRecord.previousRecord
+        "
         icon-name="clock-fill"
         :label="
           !attendanceRecordId
@@ -113,6 +118,11 @@
         @click="handleBreak"
       />
       <submit-button
+        v-if="
+          (attendanceRecord.previousRecord &&
+            attendanceRecord.previousRecord.note !== 'BREAK') ||
+          !attendanceRecord.previousRecord
+        "
         :label="
           !attendanceRecordId ? $t('attendance.in') : $t('attendance.out')
         "
@@ -281,6 +291,8 @@ export default {
     handleBreak() {
       this.isLoading = true;
 
+      const timezone = guessTimezone();
+
       this.http
         .request({
           method: this.attendanceRecordId ? 'PUT' : 'POST',
@@ -288,6 +300,9 @@ export default {
             date: this.attendanceRecord.date,
             time: this.attendanceRecord.time,
             note: this.attendanceRecord.note,
+            timezoneOffset:
+              this.attendanceRecord.timezone?._offset ?? timezone.offset,
+            timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
             attendanceType: 'BREAK',
           },
         })
