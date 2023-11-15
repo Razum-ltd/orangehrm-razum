@@ -103,13 +103,15 @@
     <oxd-divider />
     <oxd-form-actions>
       <required-text />
-      <oxd-button>
-        {{
+      <oxd-button
+        icon-name="clock-fill"
+        :label="
           !attendanceRecordId
             ? $t('attendance.break_start')
-            : $t('attendance.break_over')
-        }}
-      </oxd-button>
+            : $t('attendance.break_end')
+        "
+        @click="handleBreak"
+      />
       <submit-button
         :label="
           !attendanceRecordId ? $t('attendance.in') : $t('attendance.out')
@@ -276,6 +278,26 @@ export default {
       });
   },
   methods: {
+    handleBreak() {
+      this.isLoading = true;
+
+      this.http
+        .request({
+          method: this.attendanceRecordId ? 'PUT' : 'POST',
+          data: {
+            date: this.attendanceRecord.date,
+            time: this.attendanceRecord.time,
+            note: this.attendanceRecord.note,
+            attendanceType: 'BREAK',
+          },
+        })
+        .then(() => {
+          return this.$toast.saveSuccess();
+        })
+        .then(() => {
+          reloadPage();
+        });
+    },
     onSave() {
       this.isLoading = true;
 

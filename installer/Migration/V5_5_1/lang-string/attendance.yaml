@@ -1,0 +1,7 @@
+langStrings:
+  -
+    value: 'Break Start'
+    unitId: break_start
+  -
+    value: 'Break End'
+    unitId: break_end
