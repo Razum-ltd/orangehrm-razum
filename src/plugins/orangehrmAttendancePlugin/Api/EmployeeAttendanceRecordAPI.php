@@ -64,9 +64,9 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     public const PARAMETER_TIMEZONE_OFFSET = 'timezoneOffset';
     public const PARAMETER_TIMEZONE_NAME = 'timezoneName';
     public const PARAMETER_NOTE = 'note';
+    public const PARAMETER_ATTENDANCE_TYPE = "attendanceType";
     public const FILTER_FROM_DATE = 'fromDate';
     public const FILTER_TO_DATE = 'toDate';
-
     public const PARAMETER_RULE_NOTE_MAX_LENGTH = 250;
 
     /**
@@ -151,7 +151,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
         );
 
         if ($fromDate != null && $toDate != null && $fromDate > $toDate) {
-            throw $this->getInvalidParamException(["fromDate","toDate"]);
+            throw $this->getInvalidParamException(["fromDate", "toDate"]);
         }
 
         if ($fromDate == null && $toDate == null && $date == null) {
@@ -311,6 +311,14 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             if ($overlappingPunchInRecords) {
                 throw AttendanceServiceException::punchInOverlapFound();
             }
+            $attendanceType = $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_ATTENDANCE_TYPE
+            );
+
+            $attendanceType = $attendanceType === null ?
+                AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
+
             $this->setPunchInAttendanceRecord(
                 $attendanceRecord,
                 AttendanceRecord::STATE_PUNCHED_IN,
@@ -318,7 +326,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 $punchInDateTime,
                 $timezoneOffset,
                 $timezoneName,
-                $note
+                $note,
+                $attendanceType
             );
             $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($attendanceRecord);
             return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
@@ -357,6 +366,10 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_NOTE
+            ) .
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_ATTENDANCE_TYPE
             )
         ];
     }
@@ -368,10 +381,12 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
      */
     protected function userAllowedPunchInActions(array $allowedActions): void
     {
-        if (!in_array(
-            WorkflowStateMachine::ATTENDANCE_ACTION_PROXY_PUNCH_IN,
-            $allowedActions
-        )) {
+        if (
+            !in_array(
+                WorkflowStateMachine::ATTENDANCE_ACTION_PROXY_PUNCH_IN,
+                $allowedActions
+            )
+        ) {
             throw $this->getForbiddenException();
         }
     }
@@ -406,7 +421,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
         DateTime $punchInUserTime,
         float $punchInTimezoneOffset,
         string $punchInTimezoneName,
-        ?string $punchInNote
+        ?string $punchInNote,
+        ?string $attendanceType = AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME
     ): void {
         $attendanceRecord->setState($state);
         $attendanceRecord->setPunchInUtcTime($punchInUtcTime);
@@ -414,6 +430,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
         $attendanceRecord->setPunchInTimeOffset($punchInTimezoneOffset);
         $attendanceRecord->setPunchInTimezoneName($punchInTimezoneName);
         $attendanceRecord->setPunchInNote($punchInNote);
+        $attendanceRecord->setAttendanceType($attendanceType);
     }
 
     /**
@@ -461,6 +478,13 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                     new Rule(Rules::LENGTH, [null, self::PARAMETER_RULE_NOTE_MAX_LENGTH])
                 ),
                 true
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_ATTENDANCE_TYPE,
+                    new Rule(Rules::STRING_TYPE),
+                ),
+                true
             )
         ];
     }
@@ -501,7 +525,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 ->getAttendanceDao()
                 ->getAttendanceRecordsByEmpNumberAndIds($attendanceRecordOwnedEmpNumber, $attendanceRecordIds);
             $userAllowedAttendanceRecordIds = array_map(
-                fn (AttendanceRecord $attendanceRecord) => $attendanceRecord->getId(),
+                fn(AttendanceRecord $attendanceRecord) => $attendanceRecord->getId(),
                 $userAllowedAttendanceRecords
             );
             if (count($userAllowedAttendanceRecordIds) !== count($attendanceRecordIds)) {
@@ -639,6 +663,14 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             if (!$overlappingPunchOutRecords) {
                 throw AttendanceServiceException::punchOutOverlapFound();
             }
+            $attendanceType = $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_ATTENDANCE_TYPE
+            );
+
+            $attendanceType = $attendanceType === null ?
+                AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
+
             $this->setPunchOutAttendanceRecord(
                 $lastPunchInRecord,
                 AttendanceRecord::STATE_PUNCHED_OUT,
@@ -646,7 +678,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 $punchOutDateTime,
                 $timezoneOffset,
                 $timezoneName,
-                $note
+                $note,
+                $attendanceType
             );
             $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastPunchInRecord);
             return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
@@ -662,10 +695,12 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
      */
     protected function userAllowedPunchOutActions(array $allowedActions): void
     {
-        if (!in_array(
-            WorkflowStateMachine::ATTENDANCE_ACTION_PROXY_PUNCH_OUT,
-            $allowedActions
-        )) {
+        if (
+            !in_array(
+                WorkflowStateMachine::ATTENDANCE_ACTION_PROXY_PUNCH_OUT,
+                $allowedActions
+            )
+        ) {
             throw $this->getForbiddenException();
         }
     }
@@ -686,7 +721,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
         DateTime $punchOutUserTime,
         float $punchOutTimezoneOffset,
         string $punchOutTimezoneName,
-        ?string $punchOutNote
+        ?string $punchOutNote,
+        ?string $attendanceType = AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME
     ): void {
         $attendanceRecord->setState($state);
         $attendanceRecord->setPunchOutUtcTime($punchOutUtcTime);
@@ -694,6 +730,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
         $attendanceRecord->setPunchOutTimeOffset($punchOutTimezoneOffset);
         $attendanceRecord->setPunchOutTimezoneName($punchOutTimezoneName);
         $attendanceRecord->setPunchOutNote($punchOutNote);
+        $attendanceRecord->setAttendanceType($attendanceType);
     }
 
     /**

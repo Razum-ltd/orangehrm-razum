@@ -1,0 +1,3 @@
+translations:
+    - { target: 'Break Start', unitId: break_start, group: attendance }
+    - { target: 'Break End', unitId: break_end, group: attendance }
