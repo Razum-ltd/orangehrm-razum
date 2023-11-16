@@ -104,17 +104,9 @@
     <oxd-form-actions>
       <required-text />
       <oxd-button
-        v-if="
-          (attendanceRecord.previousRecord &&
-            attendanceRecord.previousRecord.note === 'BREAK') ||
-          !attendanceRecord.previousRecord
-        "
+        v-if="shouldShowBreakBtn"
         icon-name="clock-fill"
-        :label="
-          !attendanceRecordId
-            ? $t('attendance.break_start')
-            : $t('attendance.break_end')
-        "
+        :label="getBreakBtnLabel"
         @click="handleBreak"
       />
       <submit-button
@@ -211,6 +203,7 @@ export default {
     return {
       isLoading: false,
       attendanceRecord: {...attendanceRecordModal},
+      latestAttendanceRecord: null,
       rules: {
         date: [
           required,
@@ -224,6 +217,23 @@ export default {
     };
   },
   computed: {
+    shouldShowBreakBtn() {
+      return (
+        this.latestAttendanceRecord &&
+        (this.latestAttendanceRecord?.attendanceType?.id === 'WORK_TIME' ||
+          this.latestAttendanceRecord?.attendanceType?.id === 'BREAK_TIME')
+      );
+    },
+    getBreakBtnLabel() {
+      if (this.latestAttendanceRecord) {
+        return this.latestAttendanceRecord?.attendanceType?.id === 'WORK_TIME'
+          ? this.$t('attendance.break_start')
+          : this.$t('attendance.break_end');
+      }
+      return this.attendanceRecordId
+        ? this.$t('attendance.break_end')
+        : this.$t('attendance.break_start');
+    },
     previousAttendanceRecordDate() {
       if (!this.attendanceRecord?.previousRecord) return null;
       return formatDate(
@@ -271,10 +281,10 @@ export default {
           ? this.http.request({method: 'GET', url})
           : null;
       })
-
       .then((response) => {
         if (response) {
           const {data} = response.data;
+          this.latestAttendanceRecord = data;
           this.attendanceRecord.previousRecord = data.punchIn;
         }
       })
@@ -288,30 +298,59 @@ export default {
       });
   },
   methods: {
-    handleBreak() {
+    async handleBreak() {
       this.isLoading = true;
 
       const timezone = guessTimezone();
+      const data = {
+        date: this.attendanceRecord.date,
+        time: this.attendanceRecord.time,
+        note: this.attendanceRecord.note,
+        timezoneOffset:
+          this.attendanceRecord.timezone?._offset ?? timezone.offset,
+        timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
+      };
+      try {
+        if (
+          this.latestAttendanceRecord &&
+          this.latestAttendanceRecord?.attendanceType.id === 'WORK_TIME'
+        ) {
+          // if the user is checked in,
+          // you need to first check out && create a new attendance record with the correct type.
 
-      this.http
-        .request({
-          method: this.attendanceRecordId ? 'PUT' : 'POST',
-          data: {
-            date: this.attendanceRecord.date,
-            time: this.attendanceRecord.time,
-            note: this.attendanceRecord.note,
-            timezoneOffset:
-              this.attendanceRecord.timezone?._offset ?? timezone.offset,
-            timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
+          // check out the current record
+          await this.http.request({data, method: 'PUT'});
+          // create a new record with the BREAK type
+          await this.http.request({
+            data: {
+              ...data,
+              attendanceType: 'BREAK',
+            },
+            method: 'POST',
+          });
+        } else {
+          // if the user is checked in && the currect record attendanceType.id is BREAK_TIME,
+
+          // check out the current record
+          await this.http.request({
+            data,
+            method: 'PUT',
             attendanceType: 'BREAK',
-          },
-        })
-        .then(() => {
-          return this.$toast.saveSuccess();
-        })
-        .then(() => {
-          reloadPage();
-        });
+          });
+          // create a new record with the WORK_TYPE type
+          await this.http.request({
+            data: {
+              ...data,
+            },
+            method: 'POST',
+          });
+        }
+
+        this.$toast.saveSuccess();
+        reloadPage();
+      } catch (error) {
+        this.$toast.error(error.message);
+      }
     },
     onSave() {
       this.isLoading = true;
