@@ -7,6 +7,7 @@ use OrangeHRM\Attendance\Traits\Service\AttendanceServiceTrait;
 use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Entity\AttendanceRecord;
 use OrangeHRM\Entity\Employee;
+use OrangeHRM\Entity\Leave;
 use OrangeHRM\Leave\Traits\Service\LeaveRequestServiceTrait;
 use OrangeHRM\Leave\Dto\EmployeeLeaveSearchFilterParams;
 
@@ -15,6 +16,8 @@ class AttendanceCorrectionService
     use LeaveRequestServiceTrait;
     use AttendanceServiceTrait;
     use LoggerTrait;
+
+    const WORK_HOURS = 28800; // 8 hours in seconds
 
     /** @var AttendanceRecord[] $allEmployeeAttendance */
     private ?array $allEmployeeAttendance = null;
@@ -92,21 +95,66 @@ class AttendanceCorrectionService
 
     private function checkEmployeeWorkHours()
     {
-        // Check if punched in
-        // Check if employee is absent or partialy absent
-        // Check if employee is not absent or partially absent and forgot to work for 8 hours
-        // Check if punched out
+        $grouppedRecords = $this->groupAttendanceRecordsByEmployee();
+        $grouppedLeaves = $this->groupLeavesByEmployee();
+        if ($grouppedRecords) {
+            /** @var AttendanceRecord[] $records */
+            foreach ($grouppedRecords as $employeeId => $records) {
+                // Check if punched in
+                if (count($records) === 0) {
+                    continue; // Employee did not punch in
+                }
+                /** @var Leave[] $employeeLeaves */
+                $employeeLeaves = $grouppedLeaves[$employeeId] ?? [];
+                if (count($employeeLeaves) > 0) {
+                    $totalWorkTime = 0;
+                    foreach ($records as $record) {
+                        $startTime = $record->getPunchInUserTime();
+                        $endTime = $record->getPunchOutUserTime();
+                        $totalWorkTime += $endTime->getTimestamp() - $startTime->getTimestamp();
+                    }
+                    $totalLeaveTime = 0;
+                    foreach ($employeeLeaves as $leave) {
+                        $start = $leave->getStartTime();
+                        $end = $leave->getEndTime();
+                        $totalLeaveTime += $end->getTimestamp() - $start->getTimestamp();
+                    }
+                    // check if employee has 8 hours of work, mind the leaves
+                    if (($totalWorkTime + $totalLeaveTime) < self::WORK_HOURS) {
+                        $this->addPunchOut($records[0]->getEmployee());
+                    }
+                } else {
+                    $totalWorkTime = 0;
+                    foreach ($records as $record) {
+                        $startTime = $record->getPunchInUserTime();
+                        $endTime = $record->getPunchOutUserTime();
+                        $totalWorkTime += $endTime->getTimestamp() - $startTime->getTimestamp();
+                    }
+                    // check if employee has 8 hours of work
+                    if ($totalWorkTime < self::WORK_HOURS) {
+                        $this->addPunchOut($records[0]->getEmployee());
+                    }
+                }
+
+                // Check if punched out (last record should have a state of punch out)
+                /** @var AttendanceRecord */
+                $lastRecord = $records[count($records) - 1];
+                if (
+                    ($lastRecord->getState() === AttendanceRecord::STATE_PUNCHED_IN) || // Employee did not punch out
+                    ($lastRecord->getAttendanceType() === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME) // Employee forgot in state of break
+                ) {
+                    $this->addPunchOut($lastRecord->getEmployee());
+                }
+            }
+        }
     }
 
     private function checkEmployeeBreak()
     {
-        // check if employee took break
-        // loop over $this->groupAttendanceRecordsByEmployee()
-        // if employee has no break, add break
+        // check if employee took break, if employee has no break, add break
         $grouppedRecords = $this->groupAttendanceRecordsByEmployee();
         if ($grouppedRecords) {
             foreach ($grouppedRecords as $records) {
-                // check if employee has break
                 $hasBreak = false;
                 array_map(function ($record) use (&$hasBreak) {
                     if ($record->getAttendanceType() === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME) {
@@ -149,5 +197,23 @@ class AttendanceCorrectionService
             }
         }
         return $grouppedAttendanceRecords;
+    }
+
+    private function groupLeavesByEmployee()
+    {
+        static $grouppedLeaves = null;
+        if ($grouppedLeaves === null) {
+            $grouppedLeaves = [];
+            if ($this->allEmployeeLeaves && count($this->allEmployeeLeaves) > 0) {
+                foreach ($this->allEmployeeLeaves as $leave) {
+                    $employee = $leave->getEmployee();
+                    if (!isset($grouppedLeaves[$employee->getEmployeeId()])) {
+                        $grouppedLeaves[$employee->getEmployeeId()] = [];
+                    }
+                    $grouppedLeaves[$employee->getEmployeeId()][] = $leave;
+                }
+            }
+        }
+        return $grouppedLeaves;
     }
 }
