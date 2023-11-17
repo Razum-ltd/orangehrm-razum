@@ -73,7 +73,6 @@ class AttendanceCorrectionService
         } else {
             // if employee did not have any leaves, create a new attendance record with punch in and punch out with total time of 30 minuts
             // with type AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME
-
         }
         // add the break record to the database
     }
