@@ -17,6 +17,7 @@
  * Boston, MA  02110-1301, USA
  */
 
+use OrangeHRM\Attendance\Service\AttendanceCorrectionService;
 use OrangeHRM\Attendance\Service\AttendanceService;
 use OrangeHRM\Core\Traits\ServiceContainerTrait;
 use OrangeHRM\Framework\Http\Request;
@@ -33,5 +34,6 @@ class AttendancePluginConfiguration implements PluginConfigurationInterface
     public function initialize(Request $request): void
     {
         $this->getContainer()->register(Services::ATTENDANCE_SERVICE, AttendanceService::class);
+        $this->getContainer()->register(Services::ATTENDANCE_CORRECTION_SERVICE, AttendanceCorrectionService::class);
     }
 }
