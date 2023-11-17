@@ -1,4 +1,5 @@
 <?php
+
 namespace OrangeHRM\Attendance\Traits\Service;
 
 use OrangeHRM\Attendance\Service\AttendanceCorrectionService;
