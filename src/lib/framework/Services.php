@@ -306,6 +306,11 @@ final class Services
      */
     public const ATTENDANCE_SERVICE = 'attendance.attendance_service';
 
+    /**
+     * @see \OrangeHRM\Attendance\Service\AttendanceCorrectionService
+     */
+    public const ATTENDANCE_CORRECTION_SERVICE = 'attendance.attendance_correction_service';
+
     ///////////////////////////////////////////////////////////////
     /// I18N plugin services
     ///////////////////////////////////////////////////////////////
