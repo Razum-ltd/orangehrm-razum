@@ -98,15 +98,60 @@ class AttendanceCorrectionService
 
     private function addPunchOut(Employee $employee)
     {
-        // get the first record of the employee
-        // calculate the punch out time (the total work time must be 8 hours)
-        // create a new attendance record with punch in and punch out with total time of 8 hours
-        // with type AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME
-        // add the record to the database
         $records = $this->groupAttendanceRecordsByEmployee()[$employee->getEmployeeId()];
         if (count($records) === 0) {
             return; // Employee did not punch in
         }
+        $totalWorkTime = 0;
+        $totalBreakTime = 0;
+        /** @var AttendanceRecord $record */
+        foreach ($records as $record) {
+            $startTime = $record->getPunchInUserTime();
+            $endTime = $record->getPunchOutUserTime();
+            $totalWorkTime += $endTime->getTimestamp() - $startTime->getTimestamp();
+            if ($record->getAttendanceType() === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME) {
+                $totalBreakTime += $endTime->getTimestamp() - $startTime->getTimestamp();
+            }
+        }
+
+        $totalLeaveTime = 0;
+        $leaves = $this->groupLeavesByEmployee()[$employee->getEmployeeId()] ?? [];
+        if ($leaves) {
+            foreach ($leaves as $leave) {
+                $start = $leave->getStartTime();
+                $end = $leave->getEndTime();
+                $totalLeaveTime += $end->getTimestamp() - $start->getTimestamp();
+            }
+        }
+
+        // check if the employee has 8 hours of work time combined with leave time
+        if ($totalWorkTime + $totalBreakTime + $totalLeaveTime >= self::WORK_HOURS) {
+            return; // Employee has 8 hours of work time
+        }
+
+        // calculate the needed remaining work time
+        $remainingWorkTime = self::WORK_HOURS - ($totalWorkTime + $totalBreakTime + $totalLeaveTime);
+        // get the last end time of employee (from leave or from attendance record)
+        /** @var AttendanceRecord $lastRecord */
+        $lastRecord = $records[count($records) - 1];
+        $lastRecordEndTime = $lastRecord->getPunchOutUserTime() ?? $lastRecord->getPunchInUserTime(); // user may have forgot to punch out
+        $lastEndTime = $lastRecordEndTime;
+        if ($leaves) {
+            /** @var Leave $lastLeave */
+            $lastLeave = $leaves[count($leaves) - 1];
+            $lastLeaveEndTime = $lastLeave->getEndTime();
+            $lastEndTime = $lastRecordEndTime > $lastLeaveEndTime ? $lastRecordEndTime : $lastLeaveEndTime;
+        }
+        // calculate the punch out time
+        $punchOutTime = $lastEndTime->getTimestamp() + $remainingWorkTime;
+        // create a new attendance record with punch in and punch out with total time of 8 hours
+        $punchOutRecord = new AttendanceRecord();
+        $punchOutRecord->setEmployee($employee);
+        $punchOutRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
+        $punchOutRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $punchOutRecord->setPunchInUserTime($lastEndTime);
+        $punchOutRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $punchOutTime));
+        $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($punchOutRecord);
     }
 
     private function checkEmployeeWorkHours()
