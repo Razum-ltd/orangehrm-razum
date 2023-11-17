@@ -68,16 +68,32 @@ class AttendanceCorrectionService
         }
         // get employee leaves
         $employeeLeaves = $this->allEmployeeLeaves;
+
+        // create break record stub
+        $breakRecord = new AttendanceRecord();
+        $breakRecord->setEmployee($employee);
+        $breakRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
+        $breakRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $breakRecord->setPunchInNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
+        $breakRecord->setPunchOutNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
+
         // check if employee had any leaves
         if (count($employeeLeaves) > 0) {
-            // if employee had leaves, note the times so the break is not added on those times
-            // loop over the records an fix the punch in and punch out times so that the break can be added
-            // create a new attendance record for the break with type AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME
+            // find a time frame of 30 minutes between work time and leaves
+            // set that time to the $breakRecord
+            // TODO: implement this
         } else {
-            // if employee did not have any leaves, create a new attendance record with punch in and punch out with total time of 30 minuts
-            // with type AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME
+            // add 30 minutes of break time to the $breakRecord at 11:30 am
+            $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+            $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
         }
+        // clear the work time of the employee for the break time (30 minutes)
+        $this->clearEmployeeAttendanceForTimeFrame($employee, $breakRecord->getPunchInUserTime(), $breakRecord->getPunchOutUserTime());
         // add the break record to the database
+        /** @var \OrangeHRM\Attendance\Dao\AttendanceDao $attendanceDao */
+        $attendanceDao = $this->getAttendanceService()
+            ->getAttendanceDao();
+        $attendanceDao->savePunchRecord($breakRecord);
     }
 
     private function addPunchOut(Employee $employee)
@@ -215,5 +231,26 @@ class AttendanceCorrectionService
             }
         }
         return $grouppedLeaves;
+    }
+
+    private function clearEmployeeAttendanceForTimeFrame(Employee $employee, \DateTime $from, \DateTime $to)
+    {
+        // get all attendance records for the employee
+        $records = $this->groupAttendanceRecordsByEmployee()[$employee->getEmployeeId()];
+        // get all records that are between the time frames
+        $records = array_filter($records, function ($record) use ($from, $to) {
+            $punchInTime = $record->getPunchInUserTime();
+            $punchOutTime = $record->getPunchOutUserTime();
+            return ($punchInTime >= $from && $punchInTime <= $to) || ($punchOutTime >= $from && $punchOutTime <= $to);
+        });
+        if (count($records) === 1) {
+            // if one record, modify the record so it ends before the $from and create a new record that starts after the $to
+
+        } else if (count($records) > 1) {
+            // if more that one record, modify the first record so it ends before the $from and modify the last record so it starts after the $to
+
+        } else {
+            // no records in that time frame... all ok.
+        }
     }
 }
