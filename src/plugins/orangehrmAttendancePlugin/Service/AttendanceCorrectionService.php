@@ -17,7 +17,8 @@ class AttendanceCorrectionService
     use AttendanceServiceTrait;
     use LoggerTrait;
 
-    const WORK_HOURS = 28800; // 8 hours in seconds
+    public const WORK_HOURS = 28800; // 8 hours in seconds
+    public const BREAK_TIME = 1800; // 30 minutes in seconds
 
     /** @var AttendanceRecord[] $allEmployeeAttendance */
     private ?array $allEmployeeAttendance = null;
@@ -67,7 +68,15 @@ class AttendanceCorrectionService
             return;
         }
         // get employee leaves
-        $employeeLeaves = $this->allEmployeeLeaves;
+        /** @var Leave[] $employeeLeaves */
+        $employeeLeaves = $this->groupLeavesByEmployee()[$employee->getEmployeeId()] ?? [];
+        if (count($employeeLeaves) > 0) {
+            foreach ($employeeLeaves as $leave) {
+                if ($leave->getLeaveType() === Leave::DURATION_TYPE_FULL_DAY) {
+                    return; // employee has whole day leave, no need to add break
+                }
+            }
+        }
 
         // create break record stub
         $breakRecord = new AttendanceRecord();
@@ -77,11 +86,41 @@ class AttendanceCorrectionService
         $breakRecord->setPunchInNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
         $breakRecord->setPunchOutNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
 
-        // check if employee had any leaves
         if (count($employeeLeaves) > 0) {
-            // find a time frame of 30 minutes between work time and leaves
-            // set that time to the $breakRecord
-            // TODO: implement this
+            // find a break proposal that does not clash with any of the employee leaves
+            // create break proposals by 30 minute intervals from 10am to 15pm
+            $breakProposalTimeIncrement = self::BREAK_TIME;
+            $breakProposals = [];
+            $breakProposalStart = strtotime(date('Y-m-d') . ' 09:00:00');
+            $breakProposalEnd = $breakProposalStart + $breakProposalTimeIncrement;
+            while ($breakProposalEnd <= strtotime(date('Y-m-d') . ' 15:00:00')) {
+                $breakProposals[] = ['start' => $breakProposalStart, 'end' => $breakProposalEnd];
+                $breakProposalStart = $breakProposalEnd;
+                $breakProposalEnd = $breakProposalStart + $breakProposalTimeIncrement;
+            }
+            foreach ($employeeLeaves as $leave) {
+                $leaveStart = $leave->getStartTime()->getTimestamp();
+                $leaveEnd = $leave->getEndTime()->getTimestamp();
+                foreach ($breakProposals as $key => $breakProposal) {
+                    if ($leaveStart <= $breakProposal['start'] && $leaveEnd >= $breakProposal['end']) {
+                        unset($breakProposals[$key]);
+                    }
+                }
+            }
+            // get the first break proposal
+            $breakProposal = array_shift($breakProposals);
+            if ($breakProposal) {
+                // add 30 minutes of break time to the $breakRecord
+                $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('U', $breakProposal['start']));
+                $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $breakProposal['end']));
+            } else {
+                // add break time to the last employee end time
+                /** @var AttendanceRecord $lastRecord */
+                $lastRecord = $records[count($records) - 1];
+                $lastRecordEndTime = $lastRecord->getPunchOutUserTime() ?? $lastRecord->getPunchInUserTime(); // user may have forgot to punch out
+                $breakRecord->setPunchInUserTime($lastRecordEndTime);
+                $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $lastRecordEndTime->getTimestamp() + self::BREAK_TIME));
+            }
         } else {
             // add 30 minutes of break time to the $breakRecord at 11:30 am
             $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
@@ -290,10 +329,8 @@ class AttendanceCorrectionService
         });
         if (count($records) === 1) {
             // if one record, modify the record so it ends before the $from and create a new record that starts after the $to
-
-        } else if (count($records) > 1) {
+        } elseif (count($records) > 1) {
             // if more that one record, modify the first record so it ends before the $from and modify the last record so it starts after the $to
-
         } else {
             // no records in that time frame... all ok.
         }
