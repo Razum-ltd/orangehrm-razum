@@ -327,12 +327,53 @@ class AttendanceCorrectionService
             $punchOutTime = $record->getPunchOutUserTime();
             return ($punchInTime >= $from && $punchInTime <= $to) || ($punchOutTime >= $from && $punchOutTime <= $to);
         });
-        if (count($records) === 1) {
-            // if one record, modify the record so it ends before the $from and create a new record that starts after the $to
-        } elseif (count($records) > 1) {
-            // if more that one record, modify the first record so it ends before the $from and modify the last record so it starts after the $to
-        } else {
-            // no records in that time frame... all ok.
+        if (count($records) === 0) {
+            return; // no records to clear
         }
+        if (count($records) === 1) {
+            /** @var AttendanceRecord $originalRecord */
+            $originalRecord = $records[0];
+            // if the record end after the $to
+            if ($originalRecord->getPunchOutUserTime() <= $to) {
+                // modify the record so it end before the $from
+                $originalRecord->setPunchOutUserTime($from);
+                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($originalRecord);
+            } else {
+                // modify the record so it end before $to and create another record after $to with the remaining time
+                $originalRecordWorkTime = $originalRecord->getPunchOutUserTime()->getTimestamp() - $originalRecord->getPunchInUserTime()->getTimestamp();
+                $originalRecordWorkTimeLeft = $originalRecordWorkTime - ($from->getTimestamp() - $originalRecord->getPunchInUserTime()->getTimestamp());
+                $originalRecord->setPunchOutUserTime($from);
+                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($originalRecord);
+
+                $newRecord = new AttendanceRecord();
+                $newRecord->setEmployee($employee);
+                $newRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
+                $newRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+                $newRecord->setPunchInUserTime($to);
+                $newRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $to->getTimestamp() + $originalRecordWorkTimeLeft));
+                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($newRecord);
+            }
+        }
+        // if more that one record is found, modify the first and last record and delete all records in between
+        // records ordered by punch in time
+        usort($records, function ($a, $b) {
+            return $a->getPunchInUserTime() <=> $b->getPunchInUserTime();
+        });
+        /** @var AttendanceRecord $firstRecord */
+        $firstRecord = $records[0];
+        /** @var AttendanceRecord $lastRecord */
+        $lastRecord = $records[count($records) - 1];
+        // modify the first record
+        $firstRecord->setPunchOutUserTime($from);
+        $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($firstRecord);
+        // modify the last record
+        $lastRecord->setPunchInUserTime($to);
+        $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastRecord);
+        // delete all records in between
+        $recordsToDelete = array_slice($records, 1, count($records) - 2);
+        $recordIdsToDelete = array_map(function ($record) {
+            return $record->getAttendanceRecordId();
+        }, $recordsToDelete);
+        $this->getAttendanceService()->getAttendanceDao()->deleteAttendanceRecords($recordIdsToDelete);
     }
 }
