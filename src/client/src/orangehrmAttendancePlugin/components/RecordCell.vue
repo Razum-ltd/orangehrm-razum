@@ -26,25 +26,32 @@
     <div class="data">
       <oxd-icon
         v-if="type && type === 'BREAK_TIME'"
-        icon="clock-fill"
-        size="small"
+        name="clock"
+        class="icon"
+        size="large"
       />
-      <oxd-text tag="p">
-        {{ date }}
-        <small class="timezone"> GMT {{ offset ? offset : '00:00' }} </small>
-      </oxd-text>
-      <strong>
-        {{ time }}
-      </strong>
+      <div>
+        <oxd-text tag="p">
+          {{ date }}
+          <small class="timezone"> GMT {{ offset ? offset : '00:00' }} </small>
+        </oxd-text>
+        <strong>
+          {{ time }}
+        </strong>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import {useInjectTableProps} from '@ohrm/oxd';
+import {useInjectTableProps, OxdIcon} from '@ohrm/oxd';
 
 export default {
   name: 'RecordCell',
+
+  components: {
+    OxdIcon,
+  },
 
   props: {
     header: {
@@ -91,6 +98,15 @@ export default {
 <style lang="scss" scoped>
 .oxd-table-card-cell {
   display: block;
+
+  .data {
+    display: flex;
+    align-items: center;
+  }
+
+  .icon {
+    margin-right: 0.25rem;
+  }
 
   & .header {
     font-weight: 700;

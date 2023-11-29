@@ -44,6 +44,7 @@ use OrangeHRM\Core\Api\V2\Validator\Rule;
 use OrangeHRM\Core\Api\V2\Validator\Rules;
 use OrangeHRM\Core\Service\DateTimeHelperService;
 use OrangeHRM\Core\Traits\Auth\AuthUserTrait;
+use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Core\Traits\Service\DateTimeHelperTrait;
 use OrangeHRM\Core\Traits\Service\NumberHelperTrait;
 use OrangeHRM\Core\Traits\UserRoleManagerTrait;
@@ -58,6 +59,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     use DateTimeHelperTrait;
     use UserRoleManagerTrait;
     use NumberHelperTrait;
+    use LoggerTrait;
 
     public const PARAMETER_DATE = 'date';
     public const PARAMETER_TIME = 'time';
@@ -315,6 +317,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_ATTENDANCE_TYPE
             );
+
+            $this->getLogger()->info("AttendanceType: $attendanceType");
 
             $attendanceType = $attendanceType === null ?
                 AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
@@ -667,6 +671,8 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_ATTENDANCE_TYPE
             );
+
+            $body = json_encode($this->getRequest()->getBody());
 
             $attendanceType = $attendanceType === null ?
                 AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;

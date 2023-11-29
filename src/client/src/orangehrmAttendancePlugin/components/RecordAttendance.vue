@@ -112,7 +112,8 @@
       <submit-button
         v-if="
           (attendanceRecord.previousRecord &&
-            attendanceRecord.previousRecord.note !== 'BREAK') ||
+            attendanceRecord.previousRecord?.attendanceType?.id !==
+              'BREAK_TIME') ||
           !attendanceRecord.previousRecord
         "
         :label="
@@ -285,7 +286,10 @@ export default {
         if (response) {
           const {data} = response.data;
           this.latestAttendanceRecord = data;
-          this.attendanceRecord.previousRecord = data.punchIn;
+          this.attendanceRecord.previousRecord = {
+            ...data.punchIn,
+            attendanceType: data.attendanceType,
+          };
         }
       })
       .then(() => {
@@ -324,7 +328,7 @@ export default {
           await this.http.request({
             data: {
               ...data,
-              attendanceType: 'BREAK',
+              attendanceType: 'BREAK_TIME',
             },
             method: 'POST',
           });
@@ -333,9 +337,11 @@ export default {
 
           // check out the current record
           await this.http.request({
-            data,
+            data: {
+              ...data,
+              attendanceType: 'BREAK_TIME',
+            },
             method: 'PUT',
-            attendanceType: 'BREAK',
           });
           // create a new record with the WORK_TYPE type
           await this.http.request({
