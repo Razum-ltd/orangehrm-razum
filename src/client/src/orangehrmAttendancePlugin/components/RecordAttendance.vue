@@ -448,3 +448,8 @@ export default {
 </script>
 
 <style src="./record-attendance.scss" lang="scss" scoped></style>
+<style lang="scss">
+.break {
+  background-color: rgba($oxd-secondary-one-color, 0.1) !important;
+}
+</style>

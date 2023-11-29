@@ -44,6 +44,7 @@
 </template>
 
 <script>
+import {onMounted, getCurrentInstance} from 'vue';
 import {useInjectTableProps, OxdIcon} from '@ohrm/oxd';
 
 export default {
@@ -76,8 +77,18 @@ export default {
     },
   },
 
-  setup() {
+  setup(props) {
     const {screenState} = useInjectTableProps();
+
+    onMounted(() => {
+      if (props.type == 'BREAK_TIME') {
+        const instance = getCurrentInstance();
+        if (instance && instance.proxy) {
+          const parentElement = instance.proxy.$el.parentNode.parentNode.parentNode;
+          parentElement.classList.add('break');
+        }
+      }
+    });
 
     return {
       screenState,
