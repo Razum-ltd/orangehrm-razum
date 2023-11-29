@@ -45,7 +45,8 @@ class ConfigHelper
             Config::CACHE_DIR => $pathToSrcDir . DIRECTORY_SEPARATOR . 'cache',
             Config::CONFIG_DIR => $pathToConfigDir,
             Config::CRYPTO_KEY_DIR => $pathToConfigDir . DIRECTORY_SEPARATOR . 'cryptokeys',
-            Config::SESSION_DIR => null,
+            // Config::SESSION_DIR => null,
+            Config::SESSION_DIR => $pathToProjectBase . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'session', // may help with random 500 errors regarding session expiry
             Config::CONF_FILE_PATH => $pathToConfigDir . DIRECTORY_SEPARATOR . 'Conf.php',
         ];
     }
