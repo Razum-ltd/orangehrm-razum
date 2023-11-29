@@ -1,3 +1,4 @@
 translations:
     - { target: 'Začetek malice', unitId: break_start, group: attendance }
     - { target: 'Konec malice', unitId: break_end, group: attendance }
+    - { target: 'Tip', unitId: type, group: attendance }

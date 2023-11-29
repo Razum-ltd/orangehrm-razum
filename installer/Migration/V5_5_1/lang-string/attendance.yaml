@@ -5,3 +5,6 @@ langStrings:
   -
     value: 'Break End'
     unitId: break_end
+  -
+    value: 'Type'
+    unitId: type

@@ -1,0 +1,16 @@
+##########################
+#        Attendance
+##########################
+
+apiv2_attendance_record_types:
+  description: 'Attendance - Attendance types'
+  api: OrangeHRM\Attendance\Api\AttendanceRecordTypesAPI
+  module: attendance
+  allowed:
+    read: true
+    create: false
+    update: false
+    delete: false
+  permissions:
+    - { role: Admin, permission: { read: true, create: false, update: false, delete: false } }
+    - { role: ESS, permission: { read: true, create: false, update: false, delete: false } }

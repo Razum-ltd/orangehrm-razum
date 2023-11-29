@@ -24,6 +24,13 @@ class Migration extends AbstractMigration
         foreach ($langCodes as $langCode) {
             $this->getTranslationHelper()->addTranslations($langCode);
         }
+        // permissions
+        try {
+            $this->getDataGroupHelper()->insertApiPermissions(__DIR__ . '/permission/api.yaml');
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            // Log the error message and continue with the next statement
+            error_log($e->getMessage());
+        }
     }
 
     private function execSqlFile(string $fileName): void
