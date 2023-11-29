@@ -92,6 +92,7 @@ class AttendanceRecordListModel implements CollectionNormalizable, ModelConstruc
                     'offset' => $employeeAttendanceRecord['punchOutTimeOffset'],
                     'note' => $employeeAttendanceRecord['punchOutNote'],
                 ],
+                'attendanceType' => $employeeAttendanceRecord['attendanceType'],
                 'duration' => $this->getNumberHelper()
                     ->numberFormat((float)$employeeAttendanceRecord['total'] / 3600, 2)
             ];

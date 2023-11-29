@@ -81,7 +81,7 @@ apiv2_attendance_edit_punch_out_record_overlap:
   defaults:
     id: 0
     _api: OrangeHRM\Attendance\Api\AttendanceEditPunchOutRecordOverlapAPI
-    
+
 apiv2_attendance_employee_attendance_record:
   path: /api/v2/attendance/records/{id}
   controller: OrangeHRM\Core\Controller\Rest\V2\GenericRestController::handle
@@ -90,6 +90,13 @@ apiv2_attendance_employee_attendance_record:
     _api: OrangeHRM\Attendance\Api\AttendanceRecordAPI
   requirements:
     id: '\d+'
+
+apiv2_attendance_record_types:
+  path: /api/v2/attendance/records/types
+  controller: OrangeHRM\Core\Controller\Rest\V2\GenericRestController::handle
+  methods: [ GET ]
+  defaults:
+    _api: OrangeHRM\Attendance\Api\AttendanceRecordTypesAPI
 
 ##########################
 #        Screens
@@ -128,7 +135,7 @@ attendance_edit_attendance:
 attendance_summary_report:
   path: /time/displayAttendanceSummaryReportCriteria
   controller: OrangeHRM\Attendance\Controller\AttendanceSummaryReportController::handle
-  methods: [ GET ]  
+  methods: [ GET ]
 
 attendance_employee_punch_in_out:
   path: /attendance/proxyPunchInPunchOut

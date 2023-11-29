@@ -61,6 +61,7 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
     public const PARAMETER_PUNCH_OUT_NOTE = 'punchOutNote';
     public const PARAMETER_PUNCH_OUT_OFFSET = 'punchOutOffset';
     public const PARAMETER_PUNCH_OUT_TIMEZONE_NAME = 'punchOutTimezoneName';
+    public const PAREMETER_ATTENDANCE_TYPE = 'attendanceType';
 
     /**
      * @OA\Get(
@@ -246,7 +247,8 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
                 $punchOutTime,
                 $punchOutOffset,
                 $punchOutTimezoneName,
-                $punchOutNote
+                $punchOutNote,
+                $attendanceType
                 ) = $this->getRequestBodyParams();
 
             $recordId = $attendanceRecord->getId();
@@ -343,6 +345,9 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
                     $attendanceRecord->setPunchOutTimezoneName($punchOutTimezoneName);
                 }
             }
+            if ($attendanceType !== null) {
+                $attendanceRecord->setAttendanceType($attendanceType);
+            }
             return $attendanceRecord;
         } catch (AttendanceServiceException $e) {
             throw $this->getBadRequestException($e->getMessage());
@@ -394,7 +399,11 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
             $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_PUNCH_OUT_NOTE
-            )
+            ),
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PAREMETER_ATTENDANCE_TYPE
+            ),
         ];
     }
 
@@ -419,7 +428,8 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
      */
     protected function isAllowedToEditTimezone(
         ?float $timezoneOffset,
-        ?string $timezoneName
+        ?string $timezoneName,
+        ?string $employeeNumber = null
     ): bool {
         //auth user trying to update employee timezone, but either timezoneOffset or timezoneName
         //or both of them are missing
@@ -501,6 +511,12 @@ class AttendanceRecordAPI extends Endpoint implements ResourceEndpoint
                     new Rule(Rules::STRING_TYPE)
                 ),
                 true
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PAREMETER_ATTENDANCE_TYPE,
+                    new Rule(Rules::STRING_TYPE)
+                )
             )
         );
     }

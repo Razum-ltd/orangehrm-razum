@@ -456,6 +456,7 @@ class AttendanceDao extends BaseDao
             'attendanceRecord.punchOutUserTime AS punchOutTime',
             'attendanceRecord.punchOutNote AS punchOutNote',
             'attendanceRecord.punchOutTimeOffset AS punchOutTimeOffset',
+            'attendanceRecord.attendanceType AS attendanceType',
             'IDENTITY(employee.employeeTerminationRecord) AS terminationId',
             'employee.empNumber as empNumber',
             "SUM(TIME_DIFF(COALESCE(attendanceRecord.punchOutUtcTime, 0), COALESCE(attendanceRecord.punchInUtcTime, 0),'second')) AS total"

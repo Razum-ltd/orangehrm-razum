@@ -119,8 +119,7 @@ export default {
 
   setup(props) {
     const {locale} = useLocale();
-    const {jsDateFormat, userDateFormat, timeFormat, jsTimeFormat} =
-      useDateFormat();
+    const {userDateFormat, timeFormat} = useDateFormat();
 
     const rules = {
       date: [required, validDateFormat(userDateFormat)],
@@ -145,21 +144,21 @@ export default {
         const {punchIn, punchOut} = item;
         const punchInDate = formatDate(
           parseDate(punchIn?.userDate),
-          jsDateFormat,
+          'dd.MM.yyyy',
           {locale},
         );
         const punchInTime = formatTime(
           parseTime(punchIn?.userTime, timeFormat),
-          jsTimeFormat,
+          'hh:mm',
         );
         const punchOutDate = formatDate(
           parseDate(punchOut?.userDate),
-          jsDateFormat,
+          'dd.MM.yyyy',
           {locale},
         );
         const punchOutTime = formatTime(
           parseTime(punchOut?.userTime, timeFormat),
-          jsTimeFormat,
+          'hh:mm',
         );
 
         return {
@@ -177,6 +176,7 @@ export default {
           punchInNote: punchIn.note,
           punchOutNote: punchOut.note,
           duration: item.duration,
+          type: item.attendanceType,
         };
       });
     };
@@ -288,6 +288,7 @@ export default {
       return {
         component: RecordCell,
         props: {
+          type: args[3].type,
           date: cellData.userDate,
           time: cellData.userTime,
           offset: getStandardTimezone(cellData.offset),

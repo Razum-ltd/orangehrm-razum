@@ -24,12 +24,18 @@
       {{ header.title }}
     </div>
     <div class="data">
+      <oxd-icon
+        v-if="type && type === 'BREAK_TIME'"
+        icon="clock-fill"
+        size="small"
+      />
       <oxd-text tag="p">
-        {{ date }} {{ time }}
-        <oxd-text tag="span" class="timezone">
-          GMT {{ offset ? offset : '00:00' }}
-        </oxd-text>
+        {{ date }}
+        <small class="timezone"> GMT {{ offset ? offset : '00:00' }} </small>
       </oxd-text>
+      <strong>
+        {{ time }}
+      </strong>
     </div>
   </div>
 </template>
@@ -57,6 +63,10 @@ export default {
       type: String,
       default: null,
     },
+    type: {
+      type: String,
+      required: true,
+    },
   },
 
   setup() {
@@ -81,9 +91,11 @@ export default {
 <style lang="scss" scoped>
 .oxd-table-card-cell {
   display: block;
+
   & .header {
     font-weight: 700;
   }
+
   & .timezone {
     color: $oxd-interface-gray-color;
     white-space: nowrap;

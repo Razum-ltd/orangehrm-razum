@@ -37,6 +37,18 @@
 
       <div class="orangehrm-paper-container">
         <oxd-form :loading="isLoading" @submit-valid="onSave">
+          <oxd-grid class="orangehrm-full-width-grid no-gap">
+            <oxd-grid-item>
+              <oxd-input-field
+                v-model="attendance.attendanceType"
+                type="select"
+                :label="$t('attendance.type')"
+                :options="options"
+                :show-empty-selector="false"
+                required
+              />
+            </oxd-grid-item>
+          </oxd-grid>
           <oxd-grid :cols="2" class="orangehrm-full-width-grid no-gap">
             <oxd-grid-item>
               <oxd-grid :cols="2" class="orangehrm-full-width-grid">
@@ -206,6 +218,7 @@ export default {
       window.appGlobal.baseUrl,
       `/api/v2/attendance/records`,
     );
+
     const {userDateFormat} = useDateFormat();
 
     return {
@@ -259,6 +272,16 @@ export default {
           note: [shouldNotExceedCharLength(250)],
         },
       },
+      options: [
+        {
+          id: 'BREAK_TIME',
+          label: 'Break',
+        },
+        {
+          id: 'WORK_TIME',
+          label: 'Work',
+        },
+      ],
     };
   },
   computed: {
@@ -303,6 +326,11 @@ export default {
       .get(this.attendanceId)
       .then((response) => {
         const {data} = response.data;
+        this.attendance.attendanceType = data.attendanceType;
+        if (this.attendance.attendanceType) {
+          this.attendance.attendanceType.label =
+            this.attendance.attendanceType.name;
+        }
         this.attendance.employee = data.employee;
         this.attendance.punchIn = {
           ...data.punchIn,
@@ -367,6 +395,9 @@ export default {
             ? this.attendance.punchOut.timezone.id
             : this.attendance.punchOut.timezone.name;
         }
+      }
+      if (this.attendance.attendanceType) {
+        payload.attendanceType = this.attendance.attendanceType.id;
       }
       this.http
         .update(this.attendanceId, payload)
