@@ -86,48 +86,25 @@ class AttendanceCorrectionService
         $breakRecord->setPunchInNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
         $breakRecord->setPunchOutNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
 
-        if (count($employeeLeaves) > 0) {
-            // find a break proposal that does not clash with any of the employee leaves
-            // create break proposals by 30 minute intervals from 10am to 15pm
-            $breakProposalTimeIncrement = self::BREAK_TIME;
-            $breakProposals = [];
-            $breakProposalStart = strtotime(date('Y-m-d') . ' 09:00:00');
-            $breakProposalEnd = $breakProposalStart + $breakProposalTimeIncrement;
-            while ($breakProposalEnd <= strtotime(date('Y-m-d') . ' 15:00:00')) {
-                $breakProposals[] = ['start' => $breakProposalStart, 'end' => $breakProposalEnd];
-                $breakProposalStart = $breakProposalEnd;
-                $breakProposalEnd = $breakProposalStart + $breakProposalTimeIncrement;
+        // check if we can add a break from 11:30 to 12:00
+        $canAddBreak = true;
+        /** @var AttendanceRecord $record */
+        foreach ($records as $record) {
+            $startTime = $record->getPunchInUserTime();
+            $endTime = $record->getPunchOutUserTime();
+            if ($startTime->format('H:i:s') <= '11:30:00' && $endTime->format('H:i:s') >= '12:00:00') {
+                $canAddBreak = false;
             }
-            foreach ($employeeLeaves as $leave) {
-                $leaveStart = $leave->getStartTime()->getTimestamp();
-                $leaveEnd = $leave->getEndTime()->getTimestamp();
-                foreach ($breakProposals as $key => $breakProposal) {
-                    if ($leaveStart <= $breakProposal['start'] && $leaveEnd >= $breakProposal['end']) {
-                        unset($breakProposals[$key]);
-                    }
-                }
-            }
-            // get the first break proposal
-            $breakProposal = array_shift($breakProposals);
-            if ($breakProposal) {
-                // add 30 minutes of break time to the $breakRecord
-                $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('U', $breakProposal['start']));
-                $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $breakProposal['end']));
-            } else {
-                // add break time to the last employee end time
-                /** @var AttendanceRecord $lastRecord */
-                $lastRecord = $records[count($records) - 1];
-                $lastRecordEndTime = $lastRecord->getPunchOutUserTime() ?? $lastRecord->getPunchInUserTime(); // user may have forgot to punch out
-                $breakRecord->setPunchInUserTime($lastRecordEndTime);
-                $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $lastRecordEndTime->getTimestamp() + self::BREAK_TIME));
-            }
-        } else {
-            // add 30 minutes of break time to the $breakRecord at 11:30 am
-            $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
-            $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
         }
-        // clear the work time of the employee for the break time (30 minutes)
-        $this->clearEmployeeAttendanceForTimeFrame($employee, $breakRecord->getPunchInUserTime(), $breakRecord->getPunchOutUserTime());
+
+        if (!$canAddBreak) {
+            return; // can't add break
+        }
+
+        // set 30 minutes of break time to the $breakRecord at 11:30 am
+        $breakRecord->setPunchInUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+        $breakRecord->setPunchOutUserTime(\DateTime::createFromFormat('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
+
         // add the break record to the database
         /** @var \OrangeHRM\Attendance\Dao\AttendanceDao $attendanceDao */
         $attendanceDao = $this->getAttendanceService()
@@ -268,19 +245,6 @@ class AttendanceCorrectionService
         }
     }
 
-    private function isEmployeeAbsent(AttendanceRecord $attendanceRecord): bool
-    {
-        $employee = $attendanceRecord->getEmployee();
-        if ($this->allEmployeeLeaves && count($this->allEmployeeLeaves) > 0) {
-            foreach ($this->allEmployeeLeaves as $employeeLeave) {
-                if ($employeeLeave->getEmployee()->getEmployeeId() === $employee->getEmployeeId()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private function groupAttendanceRecordsByEmployee()
     {
         static $grouppedAttendanceRecords = null;
@@ -315,65 +279,5 @@ class AttendanceCorrectionService
             }
         }
         return $grouppedLeaves;
-    }
-
-    private function clearEmployeeAttendanceForTimeFrame(Employee $employee, \DateTime $from, \DateTime $to)
-    {
-        // get all attendance records for the employee
-        $records = $this->groupAttendanceRecordsByEmployee()[$employee->getEmployeeId()];
-        // get all records that are between the time frames
-        $records = array_filter($records, function ($record) use ($from, $to) {
-            $punchInTime = $record->getPunchInUserTime();
-            $punchOutTime = $record->getPunchOutUserTime();
-            return ($punchInTime >= $from && $punchInTime <= $to) || ($punchOutTime >= $from && $punchOutTime <= $to);
-        });
-        if (count($records) === 0) {
-            return; // no records to clear
-        }
-        if (count($records) === 1) {
-            /** @var AttendanceRecord $originalRecord */
-            $originalRecord = $records[0];
-            // if the record end after the $to
-            if ($originalRecord->getPunchOutUserTime() <= $to) {
-                // modify the record so it end before the $from
-                $originalRecord->setPunchOutUserTime($from);
-                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($originalRecord);
-            } else {
-                // modify the record so it end before $to and create another record after $to with the remaining time
-                $originalRecordWorkTime = $originalRecord->getPunchOutUserTime()->getTimestamp() - $originalRecord->getPunchInUserTime()->getTimestamp();
-                $originalRecordWorkTimeLeft = $originalRecordWorkTime - ($from->getTimestamp() - $originalRecord->getPunchInUserTime()->getTimestamp());
-                $originalRecord->setPunchOutUserTime($from);
-                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($originalRecord);
-
-                $newRecord = new AttendanceRecord();
-                $newRecord->setEmployee($employee);
-                $newRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
-                $newRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
-                $newRecord->setPunchInUserTime($to);
-                $newRecord->setPunchOutUserTime(\DateTime::createFromFormat('U', $to->getTimestamp() + $originalRecordWorkTimeLeft));
-                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($newRecord);
-            }
-        }
-        // if more that one record is found, modify the first and last record and delete all records in between
-        // records ordered by punch in time
-        usort($records, function ($a, $b) {
-            return $a->getPunchInUserTime() <=> $b->getPunchInUserTime();
-        });
-        /** @var AttendanceRecord $firstRecord */
-        $firstRecord = $records[0];
-        /** @var AttendanceRecord $lastRecord */
-        $lastRecord = $records[count($records) - 1];
-        // modify the first record
-        $firstRecord->setPunchOutUserTime($from);
-        $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($firstRecord);
-        // modify the last record
-        $lastRecord->setPunchInUserTime($to);
-        $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastRecord);
-        // delete all records in between
-        $recordsToDelete = array_slice($records, 1, count($records) - 2);
-        $recordIdsToDelete = array_map(function ($record) {
-            return $record->getAttendanceRecordId();
-        }, $recordsToDelete);
-        $this->getAttendanceService()->getAttendanceDao()->deleteAttendanceRecords($recordIdsToDelete);
     }
 }
