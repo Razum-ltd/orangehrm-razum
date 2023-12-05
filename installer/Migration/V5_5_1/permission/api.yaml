@@ -1,5 +1,5 @@
 ##########################
-#        Attendance
+#        Attendance      #
 ##########################
 
 apiv2_attendance_record_types:
@@ -14,3 +14,19 @@ apiv2_attendance_record_types:
   permissions:
     - { role: Admin, permission: { read: true, create: false, update: false, delete: false } }
     - { role: ESS, permission: { read: true, create: false, update: false, delete: false } }
+
+##########################
+#        Maintenence     #
+##########################
+
+apiv2_attendance_correction_service:
+  description: 'Attendance - Correction Service'
+  api: OrangeHRM\Attendance\Api\AttendanceCorrectionAPI
+  module: maintenance
+  allowed:
+    read: true
+    create: true
+    update: true
+    delete: true
+  permissions:
+    - { role: Admin, permission: { read: true, create: true, update: true, delete: true } }

@@ -20,6 +20,8 @@
 
 <template>
   <div class="orangehrm-background-container">
+    <attendance-correction />
+    <br />
     <calendar-sync />
     <br />
     <purge-employee-records
@@ -58,6 +60,7 @@ import EmployeeRecords from '@/orangehrmMaintenancePlugin/components/EmployeeRec
 import ConfirmationDialog from '@/core/components/dialogs/ConfirmationDialog';
 import MaintenanceNote from '@/orangehrmMaintenancePlugin/components/MaintenanceNote';
 import EmployeeLeaveCalendarSyncCardVue from '../../orangehrmCalendarPlugin/components/EmployeeLeaveCalendarSyncCard.vue';
+import EmployeeAttendanceCorrectionCardVue from '../../orangehrmCalendarPlugin/components/EmployeeAttendanceCorrectionCard.vue';
 
 const selectedEmployeeModel = {
   firstName: '',
@@ -75,6 +78,7 @@ export default {
     'selected-employee': SelectedEmployee,
     'maintenance-note': MaintenanceNote,
     'calendar-sync': EmployeeLeaveCalendarSyncCardVue,
+    'attendance-correction': EmployeeAttendanceCorrectionCardVue,
   },
 
   props: {

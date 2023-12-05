@@ -84,7 +84,8 @@ export default {
       if (props.type == 'BREAK_TIME') {
         const instance = getCurrentInstance();
         if (instance && instance.proxy) {
-          const parentElement = instance.proxy.$el.parentNode.parentNode.parentNode;
+          const parentElement =
+            instance.proxy.$el.parentNode.parentNode.parentNode;
           parentElement.classList.add('break');
         }
       }
