@@ -19,9 +19,7 @@ class AttendanceCorrectionAPI extends Endpoint implements CollectionEndpoint
     {
         $model = [];
         try {
-            $this->getAttendanceCorrectionService()
-                ->runCorrection();
-            $model['message'] = 'Attendance correction completed successfully';
+            $model['message'] = $this->getAttendanceCorrectionService()->runCorrection();
         } catch (\Throwable $th) {
             $model['error'] = $th->getMessage();
         }

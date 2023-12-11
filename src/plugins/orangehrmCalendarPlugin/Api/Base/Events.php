@@ -129,8 +129,8 @@ class Events
         $event->setDescription("Tip: {$leave->getLeaveType()->getName()}
         Čas: {$leave->getLengthDays()}dni, {$leave->getLengthHours()}ur
         Za: {$leave->getEmployee()->getFirstName()} {$leave->getEmployee()->getLastName()}
-        Od: {$leave->getDate()->format('Y-m-d H:i:s')}
-        Do: {$leave->getDate()->format('Y-m-d H:i:s')}
+        Od: {$leave->getStartTime()->format('H:i:s')}
+        Do: {$leave->getEndTime()->format('H:i:s')}
         Za več informacij si odpri povezavo: <a href='{$htmlLink}'>{$htmlLink}</a>");
 
         return $this->insert(self::CALENDAR_LEAVE_ID, $event);
@@ -158,17 +158,21 @@ class Events
         $date = $leave->getDate()->format('Y-m-d');
         if ($leave->getDurationType() !== Leave::DURATION_TYPE_FULL_DAY) {
             $start->setDateTime(
-                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getStartTime()->format('H:i:s'))
+                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getStartTime()->format('H:i:s'), $leave->getStartTime()->getTimezone())
                     ->format(\DateTime::RFC3339)
             );
             $end->setDateTime(
-                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getEndTime()->format('H:i:s'))
+                \DateTime::createFromFormat('Y-m-d H:i:s', $date . " " . $leave->getEndTime()->format('H:i:s'), $leave->getEndTime()->getTimezone())
                     ->format(\DateTime::RFC3339)
             );
         } else {
             $start->setDate($date);
             $end->setDate($date);
         }
+
+        $start->setTimeZone('Europe/Ljubljana');
+        $end->setTimeZone('Europe/Ljubljana');
+
         $event->setStart($start);
         $event->setEnd($end);
     }

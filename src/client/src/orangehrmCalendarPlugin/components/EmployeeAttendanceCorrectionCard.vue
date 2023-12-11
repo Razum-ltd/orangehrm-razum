@@ -54,9 +54,10 @@ export default {
             });
             return;
           }
+          const text = Array.isArray(message) ? message.join('\n') : message;
           this.$toast.success({
             title: 'Attendance correction run successfully.',
-            message,
+            message: text,
           });
         })
         .catch((error) => {

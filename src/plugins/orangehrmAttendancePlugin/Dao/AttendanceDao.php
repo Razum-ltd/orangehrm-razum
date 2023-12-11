@@ -441,6 +441,25 @@ class AttendanceDao extends BaseDao
 
     /**
      * @param AttendanceRecordSearchFilterParams $attendanceRecordSearchFilterParams
+     * @return array
+     */
+    public function getAttendanceRecords(
+        AttendanceRecordSearchFilterParams $attendanceRecordSearchFilterParams
+    ): array {
+        $q = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
+
+        $q->andWhere($q->expr()->gte('attendanceRecord.punchInUserTime', ':fromDate'))
+            ->setParameter('fromDate', $attendanceRecordSearchFilterParams->getFromDate());
+
+        $q->andWhere($q->expr()->lte('attendanceRecord.punchInUserTime', ':toDate'))
+            ->setParameter('toDate', $attendanceRecordSearchFilterParams->getToDate());
+
+        $q->orderBy('attendanceRecord.id', ListSorter::DESCENDING);
+        return $q->getQuery()->execute();
+    }
+
+    /**
+     * @param AttendanceRecordSearchFilterParams $attendanceRecordSearchFilterParams
      * @return Paginator
      */
     private function getAttendanceRecordListPaginator(
