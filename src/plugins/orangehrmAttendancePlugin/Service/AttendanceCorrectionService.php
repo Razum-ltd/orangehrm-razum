@@ -4,6 +4,7 @@ namespace OrangeHRM\Attendance\Service;
 
 use OrangeHRM\Attendance\Dto\AttendanceRecordSearchFilterParams;
 use OrangeHRM\Attendance\Traits\Service\AttendanceServiceTrait;
+use OrangeHRM\Core\Service\DateTimeHelperService;
 use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Entity\AttendanceRecord;
 use OrangeHRM\Entity\Employee;
@@ -20,6 +21,7 @@ class AttendanceCorrectionService
     use EmployeeServiceTrait;
     use LoggerTrait;
 
+    public const TIMEZONE = 'Europe/Ljubljana';
     public const WORK_HOURS = 28800; // 8 hours in seconds
     public const BREAK_TIME = 1800; // 30 minutes in seconds
 
@@ -47,16 +49,16 @@ class AttendanceCorrectionService
     {
         $messages = [];
         // if the current time is over 17:00 we can run the correction
-        if (!(date('H:i:s') > '17:00:00')) {
+        /* if (!(date('H:i:s') > '17:00:00')) {
             throw new \Exception('Correction can be run after 17:00.');
-        }
-        $messages[] = $this->checkEmployeeBreak();
-        $messages[] = $this->checkEmployeeAttendance();
+        } */
+        $messages[] = $this->checkEmployeesBreak();
+        $messages[] = $this->checkEmployeesAttendance();
 
         return $messages;
     }
 
-    private function checkEmployeeAttendance()
+    private function checkEmployeesAttendance()
     {
         $employeeSearchParam = new EmployeeSearchFilterParams();
         $employees = $this->getEmployeeService()
@@ -78,6 +80,14 @@ class AttendanceCorrectionService
 
     private function checkEmployeeHours(Employee $employee)
     {
+        $grouppedRecords = $this->groupAttendanceRecordsByEmployee();
+        if (!$grouppedRecords || count($grouppedRecords) === 0 || !array_key_exists($employee->getEmpNumber(), $grouppedRecords)) {
+            return; // No attendance records for this employee
+        }
+        $records = $grouppedRecords[$employee->getEmpNumber()];
+        if (count($records) === 0) {
+            return; // Employee did not punch in, we do not need to check
+        }
         $employeeLeaves = $this->getLeaveForEmployeeEmp(
             $employee->getEmpNumber(),
             $this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 00:00:00'),
@@ -101,10 +111,6 @@ class AttendanceCorrectionService
             }
         }
 
-        $records = $this->groupAttendanceRecordsByEmployee()[$employee->getEmpNumber()];
-        if (count($records) === 0) {
-            return; // Employee did not punch in, we do not need to check
-        }
         /** @var AttendanceRecord $lastRecord */
         $lastRecord = $records[count($records) - 1];
 
@@ -150,7 +156,9 @@ class AttendanceCorrectionService
             if (!$lastRecord->getPunchOutUserTime()) {
                 // set the checkout time 8 hours from the first record punch in time
                 $startTime = $records[0]->getPunchInUserTime();
-                $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U', $startTime->getTimestamp() + self::WORK_HOURS));
+                $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U.u', $startTime->getTimestamp() + self::WORK_HOURS));
+                $lastRecord->setPunchOutUtcTime($this->getDateWithUTCTimeZone($lastRecord->getPunchOutUserTime()));
+                $lastRecord->setPunchOutTimezoneName(self::TIMEZONE);
                 $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastRecord);
                 return "Employee {$employee->getFirstName()} {$employee->getLastName()} has been corrected.";
             }
@@ -162,28 +170,33 @@ class AttendanceCorrectionService
             // user forgot to checkout from break
             // set break punch out time to break start time + 30 minutes
             $startTime = $lastRecord->getPunchInUserTime();
-            $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U', $startTime->getTimestamp() + self::BREAK_TIME));
+            $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U.u', $startTime->getTimestamp() + self::BREAK_TIME));
             $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastRecord);
-
             // create a new attendance record with the start time of the last record and the calculated punch out time
             $punchOutRecord = new AttendanceRecord();
             $punchOutRecord->setEmployee($employee);
             $punchOutRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
             $punchOutRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
             $punchOutRecord->setPunchInUserTime($lastRecord->getPunchOutUserTime());
-            $punchOutRecord->setPunchOutUserTime($this->getDateWithTimeZone('U', $lastRecord->getPunchOutUserTime()->getTimestamp() + (self::BREAK_TIME + $totalWorkTime + $totalLeaveTime)));
+            $punchOutRecord->setPunchInUtcTime($this->getDateWithUTCTimeZone($punchOutRecord->getPunchInUserTime()));
+            $punchOutRecord->setPunchInTimezoneName(self::TIMEZONE);
+            $punchOutRecord->setPunchOutUserTime($this->getDateWithTimeZone('U.u', $lastRecord->getPunchOutUserTime()->getTimestamp() + (self::BREAK_TIME + $totalWorkTime + $totalLeaveTime)));
+            $punchOutRecord->setPunchOutUtcTime($this->getDateWithUTCTimeZone($punchOutRecord->getPunchOutUserTime()));
+            $punchOutRecord->setPunchOutTimezoneName(self::TIMEZONE);
             $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($punchOutRecord);
         } else {
             // user forgot to checkout from work
             // set the checkout time 8 hours from the first record punch in time
             $startTime = $records[0]->getPunchInUserTime();
-            $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U', $startTime->getTimestamp() + (self::WORK_HOURS + $totalBreakTime + $totalLeaveTime)));
+            $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U.u', ($startTime->getTimestamp() + (self::WORK_HOURS + $totalBreakTime + $totalLeaveTime))));
+            $lastRecord->setPunchOutUtcTime($this->getDateWithUTCTimeZone($lastRecord->getPunchOutUserTime()));
+            $lastRecord->setPunchOutTimezoneName(self::TIMEZONE);
             $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastRecord);
         }
         return "Employee {$employee->getFirstName()} {$employee->getLastName()} has been corrected.";
     }
 
-    private function checkEmployeeBreak()
+    private function checkEmployeesBreak()
     {
         $messages = [];
         /** @var array<AttendanceRecord[]> $grouppedRecords */
@@ -197,13 +210,18 @@ class AttendanceCorrectionService
                     }
                 }
                 if (!$hasBreak) {
+                    $canAddBreak = true;
                     /** @var Employee $employee */
                     $employee = $records[0]->getEmployee();
                     // Get employee attendance records
-                    $records = $this->groupAttendanceRecordsByEmployee()[$employee->getEmpNumber()];
+                    $grouppedRecords = $this->groupAttendanceRecordsByEmployee();
+                    if (!$grouppedRecords || count($grouppedRecords) === 0 || !array_key_exists($employee->getEmpNumber(), $grouppedRecords)) {
+                        break; // No attendance records for this employee
+                    }
+                    $records = $grouppedRecords[$employee->getEmpNumber()];
                     // Employee did not punch in or punch out
                     if (count($records) === 0) {
-                        return;
+                        break;
                     }
                     // get employee leaves
                     /** @var Leave[] $employeeLeaves */
@@ -215,14 +233,15 @@ class AttendanceCorrectionService
                     if (count($employeeLeaves) > 0) {
                         foreach ($employeeLeaves as $leave) {
                             if ($leave->getLeaveType() === Leave::DURATION_TYPE_FULL_DAY) {
-                                return; // employee has whole day leave, no need to add break
+                                // employee has whole day leave, no need to add break
+                                $canAddBreak = false;
+                                break;
                             }
                         }
                     }
-
                     // check if we can add a break from 11:30 to 12:00
-                    $canAddBreak = true;
-                    if (count($employeeLeaves) > 0) {
+                    // no need to run if we already know we can't add break
+                    if (count($employeeLeaves) > 0 && !$canAddBreak) {
                         foreach ($employeeLeaves as $leave) {
                             $start = $leave->getStartTime();
                             $end = $leave->getEndTime();
@@ -231,11 +250,9 @@ class AttendanceCorrectionService
                             }
                         }
                     }
-
                     if (!$canAddBreak) {
-                        return; // can't add break
+                        break; // can't add break
                     }
-
                     // create break record stub
                     $breakRecord = new AttendanceRecord();
                     $breakRecord->setEmployee($employee);
@@ -245,8 +262,9 @@ class AttendanceCorrectionService
                     $breakRecord->setPunchOutNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
                     // set 30 minutes of break time to the $breakRecord at 11:30 am
                     $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+                    $breakRecord->setPunchInTimezoneName(self::TIMEZONE);
                     $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
-
+                    $breakRecord->setPunchOutTimezoneName(self::TIMEZONE);
                     // add the break record to the database
                     $this->getAttendanceService()
                         ->getAttendanceDao()
@@ -260,18 +278,15 @@ class AttendanceCorrectionService
 
     private function groupAttendanceRecordsByEmployee()
     {
-        static $grouppedAttendanceRecords = null;
-        if ($grouppedAttendanceRecords === null) {
-            $grouppedAttendanceRecords = [];
-            if ($this->allEmployeeAttendance && count($this->allEmployeeAttendance) > 0) {
-                /** @var AttendanceRecord $attendanceRecord */
-                foreach ($this->allEmployeeAttendance as $attendanceRecord) {
-                    $employee = $attendanceRecord->getEmployee();
-                    if (!isset($grouppedAttendanceRecords[$employee->getEmpNumber()])) {
-                        $grouppedAttendanceRecords[$employee->getEmpNumber()] = [];
-                    }
-                    $grouppedAttendanceRecords[$employee->getEmpNumber()][] = $attendanceRecord;
+        $grouppedAttendanceRecords = [];
+        if ($this->allEmployeeAttendance && count($this->allEmployeeAttendance) > 0) {
+            /** @var AttendanceRecord $attendanceRecord */
+            foreach ($this->allEmployeeAttendance as $attendanceRecord) {
+                $employee = $attendanceRecord->getEmployee();
+                if (!isset($grouppedAttendanceRecords[$employee->getEmpNumber()])) {
+                    $grouppedAttendanceRecords[$employee->getEmpNumber()] = [];
                 }
+                $grouppedAttendanceRecords[$employee->getEmpNumber()][] = $attendanceRecord;
             }
         }
         return $grouppedAttendanceRecords;
@@ -304,10 +319,28 @@ class AttendanceCorrectionService
      * New DateTime instance with predefined timezone
      * @param mixed $format
      * @param mixed $time
-     * @return \DateTime|bool
+     * @return \DateTime
      */
     private function getDateWithTimeZone($format, $time)
     {
-        return \DateTime::createFromFormat($format, $time, new \DateTimeZone('Europe/Ljubljana'));
+        $dateTime = \DateTime::createFromFormat($format, $time);
+        if (!$dateTime) {
+            throw new \Exception("Invalid date format - $time");
+        }
+        $dateTime->setTimezone(new \DateTimeZone(self::TIMEZONE));
+        return $dateTime;
+    }
+
+    /**
+     * Get a clone of the datetime with UTC timezone
+     * @param \DateTime $datetime
+     * @return \DateTime
+     */
+    private function getDateWithUTCTimeZone(\DateTime $datetime)
+    {
+        $cloned = clone $datetime;
+        return $cloned->setTimezone(
+            new \DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
+        );
     }
 }
