@@ -311,6 +311,11 @@ final class Services
      */
     public const ATTENDANCE_CORRECTION_SERVICE = 'attendance.attendance_correction_service';
 
+    /**
+     * @see \OrangeHRM\Framework\Logger\Logger
+     */
+    public const ATTENDANCE_LOGGER = 'attendance.logger';
+
     ///////////////////////////////////////////////////////////////
     /// I18N plugin services
     ///////////////////////////////////////////////////////////////
