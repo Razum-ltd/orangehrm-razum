@@ -455,4 +455,9 @@ final class Services
      * @see \OrangeHRM\Calendar\Service\CalendarService
      */
     public const CALENDAR_SERVICE = 'google.calendar_service';
+
+    /**
+     * @see \OrangeHRM\Framework\Logger\Logger
+     */
+    public const CALENDAR_LOGGER = 'google.calendar_logger';
 }
