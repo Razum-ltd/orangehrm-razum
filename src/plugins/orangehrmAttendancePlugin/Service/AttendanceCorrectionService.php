@@ -188,6 +188,7 @@ class AttendanceCorrectionService
             // user forgot to checkout from work
             // set the checkout time 8 hours from the first record punch in time
             $startTime = $records[0]->getPunchInUserTime();
+            $lastRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
             $lastRecord->setPunchOutUserTime($this->getDateWithTimeZone('U', ($startTime->getTimestamp() + (self::WORK_HOURS + $totalBreakTime + $totalLeaveTime))));
             $lastRecord->setPunchOutUtcTime($this->getDateWithUTCTimeZone($lastRecord->getPunchOutUserTime()));
             $lastRecord->setPunchOutTimezoneName(self::TIMEZONE);
@@ -336,9 +337,10 @@ class AttendanceCorrectionService
      * @param \DateTime $datetime
      * @return \DateTime
      */
-    private function getDateWithUTCTimeZone(\DateTime $datetime)
+    private function getDateWithUTCTimeZone(\DateTime $datetime, $originalTimeZone = self::TIMEZONE)
     {
         $cloned = clone $datetime;
+        $cloned->setTimezone(new \DateTimeZone($originalTimeZone));
         return $cloned->setTimezone(
             new \DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
         );
