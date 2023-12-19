@@ -21,6 +21,7 @@ use OrangeHRM\Attendance\Service\AttendanceCorrectionService;
 use OrangeHRM\Attendance\Service\AttendanceService;
 use OrangeHRM\Core\Traits\ServiceContainerTrait;
 use OrangeHRM\Framework\Http\Request;
+use OrangeHRM\Framework\Logger\LoggerFactory;
 use OrangeHRM\Framework\PluginConfigurationInterface;
 use OrangeHRM\Framework\Services;
 
@@ -35,5 +36,10 @@ class AttendancePluginConfiguration implements PluginConfigurationInterface
     {
         $this->getContainer()->register(Services::ATTENDANCE_SERVICE, AttendanceService::class);
         $this->getContainer()->register(Services::ATTENDANCE_CORRECTION_SERVICE, AttendanceCorrectionService::class);
+
+        $this->getContainer()->register(Services::ATTENDANCE_LOGGER)
+            ->setFactory([LoggerFactory::class, 'getLogger'])
+            ->addArgument('Attendance')
+            ->addArgument('attendance.log');
     }
 }
