@@ -27,6 +27,7 @@ trait GoogleCalendarServiceTrait
                 \Google_Service_Calendar::CALENDAR,
                 \Google_Service_Calendar::CALENDAR_EVENTS,
             ]);
+            $client->setSubject('klemen.komel@razum.si'); // for impresonating a user - must have a domain wide delegation set-up
             // Change the credentials.json file for a different service account
             $client->setAuthConfig(__DIR__ . '/../../config/credentials.json');
             return $client;
