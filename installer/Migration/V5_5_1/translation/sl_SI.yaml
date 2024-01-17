@@ -1,4 +1,8 @@
 translations:
-    - { target: 'Začetek malice', unitId: break_start, group: attendance }
-    - { target: 'Konec malice', unitId: break_end, group: attendance }
-    - { target: 'Tip', unitId: type, group: attendance }
+    - { target: "Začetek malice", unitId: break_start, group: attendance }
+    - { target: "Konec malice", unitId: break_end, group: attendance }
+    - { target: "Tip", unitId: type, group: attendance }
+    - { target: "Dodaj premor", unitId: set_break, group: attendance }
+    - { target: "Premor od", unitId: break_from, group: attendance }
+    - { target: "Premor do", unitId: break_to, group: attendance }
+    - { target: "Opis", unitId: break_note, group: attendance }

@@ -1,4 +1,8 @@
 translations:
-    - { target: 'Break Start', unitId: break_start, group: attendance }
-    - { target: 'Break End', unitId: break_end, group: attendance }
-    - { target: 'Type', unitId: type, group: attendance }
+    - { target: "Break Start", unitId: break_start, group: attendance }
+    - { target: "Break End", unitId: break_end, group: attendance }
+    - { target: "Type", unitId: type, group: attendance }
+    - { target: "Add Break", unitId: set_break, group: attendance }
+    - { target: "Break from", unitId: break_from, group: attendance }
+    - { target: "Break to", unitId: break_to, group: attendance }
+    - { target: "Break Note", unitId: break_note, group: attendance }

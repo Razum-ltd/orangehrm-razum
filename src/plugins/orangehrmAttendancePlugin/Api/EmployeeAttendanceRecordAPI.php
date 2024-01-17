@@ -51,6 +51,7 @@ use OrangeHRM\Core\Traits\UserRoleManagerTrait;
 use OrangeHRM\Entity\AttendanceRecord;
 use OrangeHRM\Entity\Employee;
 use OrangeHRM\Entity\WorkflowStateMachine;
+use OrangeHRM\Pim\Traits\Service\EmployeeServiceTrait;
 
 class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
 {
@@ -60,6 +61,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     use UserRoleManagerTrait;
     use NumberHelperTrait;
     use LoggerTrait;
+    use EmployeeServiceTrait;
 
     public const PARAMETER_DATE = 'date';
     public const PARAMETER_TIME = 'time';
@@ -70,6 +72,9 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     public const FILTER_FROM_DATE = 'fromDate';
     public const FILTER_TO_DATE = 'toDate';
     public const PARAMETER_RULE_NOTE_MAX_LENGTH = 250;
+    public const PARAMETER_BREAK_START_TIME = 'breakStartTime';
+    public const PARAMETER_BREAK_END_TIME = 'breakEndTime';
+    public const PARAMETER_BREAK_NOTE = "breakNote";
 
     /**
      * @OA\Get(
@@ -191,6 +196,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             ->getTotalWorkingTime($attendanceRecordSearchFilterParams);
         $attendanceRecordTotalDuration = $attendanceRecordTotalDuration === null ? 0 : $attendanceRecordTotalDuration['total'];
 
+
         return new EndpointCollectionResult(
             AttendanceRecordListModel::class,
             [$attendanceRecords],
@@ -252,6 +258,30 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                     new Rule(Rules::API_DATE)
                 ),
             ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_ATTENDANCE_TYPE,
+                    new Rule(Rules::STRING_TYPE)
+                )
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_START_TIME,
+                    new Rule(Rules::STRING_TYPE)
+                )
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_END_TIME,
+                    new Rule(Rules::STRING_TYPE)
+                )
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_NOTE,
+                    new Rule(Rules::STRING_TYPE)
+                )
+            ),
             ...$this->getSortingAndPaginationParamsRules(AttendanceRecordSearchFilterParams::ALLOWED_SORT_FIELDS)
         );
     }
@@ -292,7 +322,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     public function create(): EndpointResourceResult
     {
         try {
-            list($empNumber, $date, $time, $timezoneOffset, $timezoneName, $note) = $this->getCommonRequestParams();
+            list($empNumber, $date, $time, $timezoneOffset, $timezoneName, $note, $attendanceType, $breakStartTime, $breakEndTime, $breakNote) = $this->getCommonRequestParams();
             $allowedWorkflowItems = $this->getUserRoleManager()->getAllowedActions(
                 WorkflowStateMachine::FLOW_ATTENDANCE,
                 AttendanceRecord::STATE_INITIAL,
@@ -301,40 +331,72 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 [Employee::class => $empNumber]
             );
             $this->userAllowedPunchInActions(array_keys($allowedWorkflowItems));
+
             $attendanceRecord = new AttendanceRecord();
             $attendanceRecord->getDecorator()->setEmployeeByEmpNumber($empNumber);
-            $punchInDateTime = $this->extractPunchDateTime($date . ' ' . $time, $timezoneOffset);
-            $punchInUTCDateTime = (clone $punchInDateTime)->setTimezone(
-                new DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
-            );
-            $overlappingPunchInRecords = $this->getAttendanceService()
-                ->getAttendanceDao()
-                ->checkForPunchInOverLappingRecords($punchInUTCDateTime, $empNumber);
-            if ($overlappingPunchInRecords) {
-                throw AttendanceServiceException::punchInOverlapFound();
+
+
+            if ($attendanceType === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME) {
+
+                $breakPunchInDateTime = $this->extractPunchDateTime($date . ' ' . $breakStartTime, $timezoneOffset);
+                $breakPunchOutDateTime = $this->extractPunchDateTime($date . ' ' . $breakEndTime, $timezoneOffset);
+
+                $this->setPunchInAttendanceRecord(
+                    $attendanceRecord,
+                    AttendanceRecord::STATE_PUNCHED_IN,
+                    $breakPunchInDateTime,
+                    $breakPunchInDateTime,
+                    $timezoneOffset,
+                    $timezoneName,
+                    $breakNote,
+                    $attendanceType,
+                );
+
+                $this->setPunchOutAttendanceRecord(
+                    $attendanceRecord,
+                    AttendanceRecord::STATE_PUNCHED_OUT,
+                    $breakPunchOutDateTime,
+                    $breakPunchOutDateTime,
+                    $timezoneOffset,
+                    $timezoneName,
+                    $breakNote,
+                    $attendanceType
+                );
+
+                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($attendanceRecord);
+
+            } else {
+                $punchInDateTime = $this->extractPunchDateTime($date . ' ' . $time, $timezoneOffset);
+                $punchInUTCDateTime = (clone $punchInDateTime)->setTimezone(
+                    new DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
+                );
+                $overlappingPunchInRecords = $this->getAttendanceService()
+                    ->getAttendanceDao()
+                    ->checkForPunchInOverLappingRecords($punchInUTCDateTime, $empNumber);
+                if ($overlappingPunchInRecords) {
+                    throw AttendanceServiceException::punchInOverlapFound();
+                }
+
+                $this->getLogger()->info("AttendanceType: $attendanceType");
+
+                $attendanceType = $attendanceType === null ?
+                    AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
+
+                $this->setPunchInAttendanceRecord(
+                    $attendanceRecord,
+                    AttendanceRecord::STATE_PUNCHED_IN,
+                    $punchInUTCDateTime,
+                    $punchInDateTime,
+                    $timezoneOffset,
+                    $timezoneName,
+                    $note,
+                    $attendanceType
+                );
+                $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($attendanceRecord);
             }
-            $attendanceType = $this->getRequestParams()->getStringOrNull(
-                RequestParams::PARAM_TYPE_BODY,
-                self::PARAMETER_ATTENDANCE_TYPE
-            );
 
-            $this->getLogger()->info("AttendanceType: $attendanceType");
-
-            $attendanceType = $attendanceType === null ?
-                AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
-
-            $this->setPunchInAttendanceRecord(
-                $attendanceRecord,
-                AttendanceRecord::STATE_PUNCHED_IN,
-                $punchInUTCDateTime,
-                $punchInDateTime,
-                $timezoneOffset,
-                $timezoneName,
-                $note,
-                $attendanceType
-            );
-            $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($attendanceRecord);
             return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
+
         } catch (AttendanceServiceException $e) {
             throw $this->getBadRequestException($e->getMessage());
         }
@@ -355,7 +417,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_DATE
             ),
-            $this->getRequestParams()->getString(
+            $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_TIME
             ),
@@ -370,10 +432,23 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_NOTE
-            ) .
+            ),
             $this->getRequestParams()->getStringOrNull(
                 RequestParams::PARAM_TYPE_BODY,
                 self::PARAMETER_ATTENDANCE_TYPE
+            ),
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_BREAK_START_TIME
+            ),
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_BREAK_END_TIME
+            )
+            ,
+            $this->getRequestParams()->getStringOrNull(
+                RequestParams::PARAM_TYPE_BODY,
+                self::PARAMETER_BREAK_NOTE
             )
         ];
     }
@@ -464,10 +539,6 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 new Rule(Rules::API_DATE)
             ),
             new ParamRule(
-                self::PARAMETER_TIME,
-                new Rule(Rules::TIME, ['H:i'])
-            ),
-            new ParamRule(
                 self::PARAMETER_TIMEZONE_OFFSET,
                 new Rule(Rules::TIMEZONE_OFFSET)
             ),
@@ -485,7 +556,34 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
             ),
             $this->getValidationDecorator()->notRequiredParamRule(
                 new ParamRule(
+                    self::PARAMETER_TIME,
+                    new Rule(Rules::TIME, ['H:i'])
+                ),
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
                     self::PARAMETER_ATTENDANCE_TYPE,
+                    new Rule(Rules::STRING_TYPE),
+                ),
+                true
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_START_TIME,
+                    new Rule(Rules::STRING_TYPE),
+                ),
+                true
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_END_TIME,
+                    new Rule(Rules::STRING_TYPE),
+                ),
+                true
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_BREAK_NOTE,
                     new Rule(Rules::STRING_TYPE),
                 ),
                 true
@@ -529,7 +627,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 ->getAttendanceDao()
                 ->getAttendanceRecordsByEmpNumberAndIds($attendanceRecordOwnedEmpNumber, $attendanceRecordIds);
             $userAllowedAttendanceRecordIds = array_map(
-                fn (AttendanceRecord $attendanceRecord) => $attendanceRecord->getId(),
+                fn(AttendanceRecord $attendanceRecord) => $attendanceRecord->getId(),
                 $userAllowedAttendanceRecords
             );
             if (count($userAllowedAttendanceRecordIds) !== count($attendanceRecordIds)) {
@@ -642,7 +740,7 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
     public function update(): EndpointResult
     {
         try {
-            list($empNumber, $date, $time, $timezoneOffset, $timezoneName, $note) = $this->getCommonRequestParams();
+            list($empNumber, $date, $time, $timezoneOffset, $timezoneName, $note, $attendanceType, $breakStartTime, $breakEndTime) = $this->getCommonRequestParams();
             $allowedWorkflowItems = $this->getUserRoleManager()->getAllowedActions(
                 WorkflowStateMachine::FLOW_ATTENDANCE,
                 AttendanceRecord::STATE_PUNCHED_IN,
@@ -651,44 +749,61 @@ class EmployeeAttendanceRecordAPI extends Endpoint implements CrudEndpoint
                 [Employee::class => $empNumber]
             );
             $this->userAllowedPunchOutActions(array_keys($allowedWorkflowItems));
-            $lastPunchInRecord = $this->getAttendanceService()
-                ->getAttendanceDao()
-                ->getLastPunchRecordByEmployeeNumberAndActionableList($empNumber, [AttendanceRecord::STATE_PUNCHED_IN]);
-            if (is_null($lastPunchInRecord)) {
-                throw AttendanceServiceException::punchOutAlreadyExist();
+
+
+            if ($attendanceType === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME) {
+                $breakPunchInDateTime = $this->extractPunchDateTime($date . ' ' . $breakStartTime, $timezoneOffset);
+                $breakPunchOutDateTime = $this->extractPunchDateTime($date . ' ' . $breakEndTime, $timezoneOffset);
+
+                $attendanceRecord = new AttendanceRecord();
+
+
+                $employee = $this->getEmployeeService()
+                    ->getEmployeeDao()
+                    ->getEmployeeByEmpNumber($empNumber);
+
+                $attendanceRecord->setEmployee($employee);
+                $attendanceRecord->setPunchInUserTime($breakPunchInDateTime);
+                $attendanceRecord->setPunchOutUserTime($breakPunchOutDateTime);
+                $attendanceRecord->setAttendanceType($attendanceType);
+                $attendanceRecord->setState(AttendanceRecord::STATE_PUNCHED_IN);
+
+                $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($attendanceRecord);
+                return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
+
+            } else {
+
+                $lastPunchInRecord = $this->getAttendanceService()
+                    ->getAttendanceDao()
+                    ->getLastPunchRecordByEmployeeNumberAndActionableList($empNumber, [AttendanceRecord::STATE_PUNCHED_IN]);
+                if (is_null($lastPunchInRecord)) {
+                    throw AttendanceServiceException::punchOutAlreadyExist();
+                }
+                $punchOutDateTime = $this->extractPunchDateTime($date . ' ' . $time, $timezoneOffset);
+                $punchOutUTCDateTime = (clone $punchOutDateTime)->setTimezone(
+                    new DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
+                );
+
+                $overlappingPunchOutRecords = $this->getAttendanceService()
+                    ->getAttendanceDao()
+                    ->checkForPunchOutOverLappingRecords($punchOutUTCDateTime, $empNumber);
+                if (!$overlappingPunchOutRecords) {
+                    throw AttendanceServiceException::punchOutOverlapFound();
+                }
+
+                $this->setPunchOutAttendanceRecord(
+                    $lastPunchInRecord,
+                    AttendanceRecord::STATE_PUNCHED_OUT,
+                    $punchOutUTCDateTime,
+                    $punchOutDateTime,
+                    $timezoneOffset,
+                    $timezoneName,
+                    $note,
+                    AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME
+                );
+                $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastPunchInRecord);
+                return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
             }
-            $punchOutDateTime = $this->extractPunchDateTime($date . ' ' . $time, $timezoneOffset);
-            $punchOutUTCDateTime = (clone $punchOutDateTime)->setTimezone(
-                new DateTimeZone(DateTimeHelperService::TIMEZONE_UTC)
-            );
-            $overlappingPunchOutRecords = $this->getAttendanceService()
-                ->getAttendanceDao()
-                ->checkForPunchOutOverLappingRecords($punchOutUTCDateTime, $empNumber);
-            if (!$overlappingPunchOutRecords) {
-                throw AttendanceServiceException::punchOutOverlapFound();
-            }
-            $attendanceType = $this->getRequestParams()->getStringOrNull(
-                RequestParams::PARAM_TYPE_BODY,
-                self::PARAMETER_ATTENDANCE_TYPE
-            );
-
-            $body = json_encode($this->getRequest()->getBody());
-
-            $attendanceType = $attendanceType === null ?
-                AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME : AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
-
-            $this->setPunchOutAttendanceRecord(
-                $lastPunchInRecord,
-                AttendanceRecord::STATE_PUNCHED_OUT,
-                $punchOutUTCDateTime,
-                $punchOutDateTime,
-                $timezoneOffset,
-                $timezoneName,
-                $note,
-                $attendanceType
-            );
-            $attendanceRecord = $this->getAttendanceService()->getAttendanceDao()->savePunchRecord($lastPunchInRecord);
-            return new EndpointResourceResult(AttendanceRecordModel::class, $attendanceRecord);
         } catch (AttendanceServiceException $e) {
             throw $this->getBadRequestException($e->getMessage());
         }

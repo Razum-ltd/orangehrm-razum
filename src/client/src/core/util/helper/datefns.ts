@@ -11,6 +11,7 @@ import {
   isToday,
   differenceInSeconds,
   differenceInCalendarDays,
+  addHours,
 } from 'date-fns';
 
 const defaultTimezones = [
@@ -382,4 +383,5 @@ export {
   getStandardTimezone,
   isToday,
   formatTime,
+  addHours,
 };

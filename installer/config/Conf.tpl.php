@@ -28,12 +28,15 @@ class Conf
     public function __construct()
     {
         $this->dbHost = '{{dbHost}}';
+        //$this->dbHost = php_sapi_name() === 'cli' ? '127.0.0.1' : 'mariadb'; // Uncomment if the installation doesn't complete
+
         $this->dbPort = '{{dbPort}}';
         if (defined('ENVIRONMENT') && ENVIRONMENT == 'test') {
             $prefix = defined('TEST_DB_PREFIX') ? TEST_DB_PREFIX : '';
             $this->dbName = $prefix . 'test_{{dbName}}';
         } else {
-            $this->dbName = '{{dbName}}';
+            $this->dbName = 'orangehrm'; 
+            // $this->dbName = '{{dbName}}'
         }
         $this->dbUser = '{{dbUser}}';
         $this->dbPass = '{{dbPass}}';

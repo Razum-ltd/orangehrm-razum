@@ -8,3 +8,15 @@ langStrings:
   -
     value: 'Type'
     unitId: type
+  -
+    value: 'Set Break'
+    unitId: set_break
+  -
+    value: 'Break from'
+    unitId: 'break_from'
+  -
+    value: 'Break to'
+    unitId: 'break_to'
+  -
+    value: 'Break Note'
+    unitId: 'break_note'
