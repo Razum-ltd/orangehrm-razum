@@ -161,6 +161,12 @@ export default {
           'hh:mm',
         );
 
+        // Since the rendering is handled in lib component
+        // for now, print literals (we can't use html tags to display data propely)
+        const breaks = item?.breaks?.map((breakItem) => {
+          return `${breakItem.punchInNote}:  ${breakItem?.punchInTime} - ${breakItem?.punchOutTime}`;
+        });
+
         return {
           id: item.id,
           punchIn: {
@@ -177,6 +183,7 @@ export default {
           punchOutNote: punchOut.note,
           duration: item.duration,
           type: item.attendanceType,
+          breaks: breaks.join(', '),
         };
       });
     };
@@ -251,6 +258,12 @@ export default {
           name: 'duration',
           slot: 'title',
           title: this.$t('attendance.duration_hours'),
+          style: {flex: 1},
+        },
+        {
+          name: 'breaks',
+          slot: 'title',
+          title: this.$t('attendance.break'),
           style: {flex: 1},
         },
         {

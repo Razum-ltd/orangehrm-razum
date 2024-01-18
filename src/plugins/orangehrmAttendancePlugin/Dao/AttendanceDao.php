@@ -49,7 +49,7 @@ class AttendanceDao extends BaseDao
     /**
      * @param int $employeeNumber
      * @param string[] $actionableStatesList
-     * @param string $attendanceType
+     * @param string[] $includedAttendanceTypes
      * @return AttendanceRecord|null
      */
     public function getLastPunchRecordByEmployeeNumberAndActionableList(
@@ -104,7 +104,7 @@ class AttendanceDao extends BaseDao
             throw AttendanceServiceException::punchOutAlreadyExist();
         }
         $punchInUtcTime = $attendanceRecord->getDecorator()->getPunchInUTCDateTime();
-        if ($punchInUtcTime > $punchOutTime && $attendenceType === AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME) {
+        if ($punchInUtcTime > $punchOutTime) {
             throw AttendanceServiceException::punchOutTimeBehindThanPunchInTime();
         }
 
@@ -169,8 +169,13 @@ class AttendanceDao extends BaseDao
      * @param int|null $recordId
      * @return bool
      */
-    private function getCommonQueryForPunchOutOverlap(DateTime $punchInUtcTime, DateTime $punchOutTime, int $employeeNumber, ?int $recordId = null): bool
-    {
+    private function getCommonQueryForPunchOutOverlap(
+        DateTime $punchInUtcTime,
+        DateTime $punchOutTime,
+        int $employeeNumber,
+        ?int $recordId = null,
+        array $includedAttendanceTypes = [AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME]
+    ): bool {
         $q1 = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
         $q1->andWhere('attendanceRecord.employee = :empNumber');
         $q1->andWhere($q1->expr()->gt('attendanceRecord.punchInUtcTime', ':punchInUtcTime'))
@@ -182,7 +187,8 @@ class AttendanceDao extends BaseDao
             $q1->andWhere('attendanceRecord.id != :recordId');
             $q1->setParameter('recordId', $recordId);
         }
-
+        $q1->andWhere($q1->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
         /* @var AttendanceRecord[] $attendance */
         $attendance = $q1->getQuery()->execute();
         if ((count($attendance) > 0)) {
@@ -201,6 +207,9 @@ class AttendanceDao extends BaseDao
             $q2->setParameter('recordId', $recordId);
         }
 
+        $q2->andWhere($q2->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
+
         if (($this->getPaginator($q2)->count() > 0)) {
             return false;
         }
@@ -216,6 +225,9 @@ class AttendanceDao extends BaseDao
             $q3->andWhere('attendanceRecord.id != :recordId');
             $q3->setParameter('recordId', $recordId);
         }
+        $q3->andWhere($q3->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
+
 
         if (($this->getPaginator($q3)->count() > 0)) {
             return false;
@@ -602,7 +614,7 @@ class AttendanceDao extends BaseDao
      * @param EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams
      * @return Paginator
      */
-    private function getEmployeeAttendanceSummaryPaginator(EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams): Paginator
+    private function getEmployeeAttendanceSummaryPaginator(EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams): Paginator 
     {
         $q = $this->getEmployeeAttendanceSummaryQueryBuilderWrapper($employeeAttendanceSummarySearchFilterParams)->getQueryBuilder();
         $q->select(

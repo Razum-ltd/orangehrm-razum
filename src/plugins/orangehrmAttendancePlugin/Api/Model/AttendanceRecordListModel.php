@@ -23,6 +23,7 @@ use OrangeHRM\Core\Api\V2\Serializer\CollectionNormalizable;
 use OrangeHRM\Core\Api\V2\Serializer\ModelConstructorArgsAwareInterface;
 use OrangeHRM\Core\Traits\Service\DateTimeHelperTrait;
 use OrangeHRM\Core\Traits\Service\NumberHelperTrait;
+use OrangeHRM\Entity\AttendanceRecord;
 
 /**
  * @OA\Schema(
@@ -69,7 +70,21 @@ class AttendanceRecordListModel implements CollectionNormalizable, ModelConstruc
     public function toArray(): array
     {
         $result = [];
-        foreach ($this->attendanceRecords as $employeeAttendanceRecord) {
+
+        // Filter work records so we can properly map breaks to the work records
+        $workAttendanceRecords = array_filter($this->attendanceRecords, function ($ar) {
+            return $ar['attendanceType'] !== AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME;
+        });
+
+        foreach ($workAttendanceRecords as $employeeAttendanceRecord) {
+            
+            // Break records matched by date of current work record
+            $breaks = array_filter($this->attendanceRecords, function ($ar) use ($employeeAttendanceRecord) {
+                return $ar['attendanceType'] === AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME &&
+                    $this->getDateTimeHelper()->formatDateTimeToYmd($ar['punchInTime']) ===
+                    $this->getDateTimeHelper()->formatDateTimeToYmd($employeeAttendanceRecord['punchInTime']);
+            });
+
             $result[] = [
                 'id' => $employeeAttendanceRecord['id'],
                 'punchIn' => [
@@ -94,7 +109,16 @@ class AttendanceRecordListModel implements CollectionNormalizable, ModelConstruc
                 ],
                 'attendanceType' => $employeeAttendanceRecord['attendanceType'],
                 'duration' => $this->getNumberHelper()
-                    ->numberFormat((float)$employeeAttendanceRecord['total'] / 3600, 2)
+                    ->numberFormat((float) $employeeAttendanceRecord['total'] / 3600, 2),
+                'breaks' => array_map(function ($break) {
+                    $break['punchInTime'] = $this->getDateTimeHelper()->formatDateTimeToTimeString(
+                        $break['punchInTime']
+                    );
+                    $break['punchOutTime'] = $this->getDateTimeHelper()->formatDateTimeToTimeString(
+                        $break['punchOutTime']
+                    );
+                    return $break;
+                }, $breaks)
             ];
         }
         return $result;
