@@ -391,23 +391,20 @@ class AttendanceDao extends BaseDao
             // from date is not null and to date is null
             $q->leftJoin('employee.attendanceRecords', 'attendanceRecord', Expr\Join::WITH, $q->expr()->andX(
                 $q->expr()->gte('attendanceRecord.punchInUserTime', ':fromDate')
-            )
-            );
+            ));
             $q->setParameter('fromDate', $attendanceReportSearchFilterParams->getFromDate());
         } elseif (is_null($attendanceReportSearchFilterParams->getFromDate()) && !is_null($attendanceReportSearchFilterParams->getToDate())) {
             // from date is null and to date is not null
             $q->leftJoin('employee.attendanceRecords', 'attendanceRecord', Expr\Join::WITH, $q->expr()->andX(
                 $q->expr()->lte('attendanceRecord.punchOutUserTime', ':toDate')
-            )
-            );
+            ));
             $q->setParameter('toDate', $attendanceReportSearchFilterParams->getToDate());
         } elseif (!is_null($attendanceReportSearchFilterParams->getFromDate()) && !is_null($attendanceReportSearchFilterParams->getToDate())) {
             // both from date and to date is not null
             $q->leftJoin('employee.attendanceRecords', 'attendanceRecord', Expr\Join::WITH, $q->expr()->andX(
                 $q->expr()->gte('attendanceRecord.punchInUserTime', ':fromDate'),
                 $q->expr()->lte('attendanceRecord.punchOutUserTime', ':toDate')
-            )
-            );
+            ));
             $q->setParameter('fromDate', $attendanceReportSearchFilterParams->getFromDate());
             $q->setParameter('toDate', $attendanceReportSearchFilterParams->getToDate());
         }
@@ -633,8 +630,7 @@ class AttendanceDao extends BaseDao
         $q->leftJoin('employee.attendanceRecords', 'attendanceRecord', Expr\Join::WITH, $q->expr()->andX(
             $q->expr()->gte('attendanceRecord.punchInUserTime', ':fromDate'),
             $q->expr()->lte('attendanceRecord.punchInUserTime', ':toDate')
-        )
-        );
+        ));
         $q->setParameter('fromDate', $employeeAttendanceSummarySearchFilterParams->getFromDate());
         $q->setParameter('toDate', $employeeAttendanceSummarySearchFilterParams->getToDate());
 

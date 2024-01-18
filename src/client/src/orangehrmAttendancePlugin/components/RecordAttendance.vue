@@ -414,40 +414,6 @@ export default {
         breakNote: this.attendanceRecord.breakNote,
       };
       try {
-        /*if (this.latestAttendanceRecord?.attendanceType?.id === 'WORK_TIME') {
-          // if the user is checked in,
-          // you need to first check out && create a new attendance record with the correct type.
-
-          // check out the current record
-          await this.http.request({data, method: 'PUT'});
-          // create a new record with the BREAK type
-          await this.http.request({
-            data: {
-              ...data,
-              attendanceType: 'BREAK_TIME',
-            },
-            method: 'POST',
-          });
-        } else {
-          // if the user is checked in && the currect record attendanceType.id is BREAK_TIME,
-
-          // check out the current record
-          await this.http.request({
-            data: {
-              ...data,
-              attendanceType: 'BREAK_TIME',
-            },
-            method: 'POST',
-          });
-          // create a new record with the WORK_TYPE type
-          await this.http.request({
-            data: {
-              ...data,
-            },
-            method: 'POST',
-          });
-        }*/
-
         await this.http.request({
           data: {
             ...data,

@@ -34,9 +34,10 @@ class Conf
         if (defined('ENVIRONMENT') && ENVIRONMENT == 'test') {
             $prefix = defined('TEST_DB_PREFIX') ? TEST_DB_PREFIX : '';
             $this->dbName = $prefix . 'test_{{dbName}}';
+        } else if (defined('ENVIRONMENT') && ENVIRONMENT == 'production') {
+            $this->dbName = '{{dbName}}';
         } else {
-            $this->dbName = 'orangehrm'; 
-            // $this->dbName = '{{dbName}}'
+            $this->dbName = 'orangehrm';
         }
         $this->dbUser = '{{dbUser}}';
         $this->dbPass = '{{dbPass}}';

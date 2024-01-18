@@ -77,8 +77,6 @@ class EmployeeLatestAttendanceRecordAPI extends Endpoint implements ResourceEndp
             $this->getAuthUser()->getEmpNumber()
         );
 
-
-
         $attendanceRecord = $this->getAttendanceService()
             ->getAttendanceDao()
             ->getLatestAttendanceRecordByEmployeeNumber($employeeNumber);
