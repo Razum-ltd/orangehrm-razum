@@ -89,7 +89,7 @@
     <!-- Note input -->
     <oxd-form-row>
       <oxd-grid :cols="4" class="orangehrm-full-width-grid">
-        <oxd-grid-item class="--span-column-2">
+        <oxd-grid-item class="--offset-row-2">
           <oxd-input-field
             v-model="attendanceRecord.note"
             :rules="rules.note"
@@ -100,15 +100,88 @@
         </oxd-grid-item>
       </oxd-grid>
     </oxd-form-row>
-    <oxd-divider />
+    <div v-if="showBreakSection">
+      <oxd-text tag="h6" class="orangehrm-main-title">
+        {{ 'Break' }}
+      </oxd-text>
+      <oxd-divider />
+      <!-- Time  Selector -->
+      <oxd-form-row class="orangehrm-break-section">
+        <div v-if="meta.length">
+          <oxd-grid v-for="record in meta" :key="record.id" :cols="5">
+            <oxd-grid-item class="flex-center">
+              <oxd-text tag="h6" class="orangehrm-main-title">
+                <span>{{ record.breakNote ?? 'Empty note' }}</span
+                >&nbsp;<small
+                  ><i>(id: {{ record.id }})</i></small
+                >
+              </oxd-text>
+            </oxd-grid-item>
+            <oxd-grid-item>
+              <oxd-text tag="h6" class="orangehrm-main-title">
+                {{ record.startTime }} - {{ record.endTime }}
+              </oxd-text>
+            </oxd-grid-item>
+          </oxd-grid>
+          <oxd-divider />
+        </div>
+        <oxd-grid :cols="5" class="orangehrm-full-width-grid">
+          <oxd-grid-item class="--span-column-1 flex-center">
+            <div>
+              <time-input
+                v-model="attendanceRecord.breakStartTime"
+                :label="$t('attendance.break_from')"
+                :disabled="!isEditable"
+                :rules="rules.time"
+                type="time"
+                :placeholder="$t('attendance.hh_mm')"
+                required
+              />
+            </div>
+          </oxd-grid-item>
+          <oxd-grid-item class="--span-column-1 flex-center">
+            <div>
+              <time-input
+                v-model="attendanceRecord.breakEndTime"
+                :label="$t('attendance.break_to')"
+                :disabled="!isEditable"
+                :rules="rules.time"
+                type="time"
+                :placeholder="$t('attendance.hh_mm')"
+                required
+              />
+            </div>
+          </oxd-grid-item>
+          <oxd-grid-item class="--span-column-1 flex-center">
+            <div>
+              <oxd-input-field
+                v-model="attendanceRecord.breakNote"
+                :label="$t('attendance.break_note')"
+                :placeholder="$t('general.type_here')"
+                type="textarea"
+              />
+            </div>
+          </oxd-grid-item>
+          <oxd-grid-item class="--span-column-1 flex-center">
+            <div>
+              <oxd-button
+                icon-name="clock-fill"
+                :label="$t('attendance.set_break')"
+                @click="handleBreak"
+              />
+            </div>
+          </oxd-grid-item>
+        </oxd-grid>
+      </oxd-form-row>
+    </div>
     <oxd-form-actions>
       <required-text />
-      <oxd-button
+      <!-- <oxd-button
         v-if="shouldShowBreakBtn"
         icon-name="clock-fill"
         :label="getBreakBtnLabel"
         @click="handleBreak"
-      />
+      /> -->
       <submit-button
         v-if="
           (attendanceRecord.previousRecord &&
@@ -146,6 +219,7 @@ import useDateFormat from '@/core/util/composable/useDateFormat';
 import {reloadPage, navigate} from '@/core/util/helper/navigation';
 import TimezoneDropdown from '@/orangehrmAttendancePlugin/components/TimezoneDropdown.vue';
 import TimeInput from '../../core/components/time/TimeInput.vue';
+import {addHours} from 'date-fns';
 
 const attendanceRecordModal = {
   date: null,
@@ -153,7 +227,17 @@ const attendanceRecordModal = {
   note: null,
   timezone: null,
   previousRecord: null,
+  meta: null,
 };
+
+const metaRecord = [
+  {
+    id: null,
+    breakNote: null,
+    breakStartTime: null,
+    breakEndTime: null,
+  },
+];
 
 export default {
   name: 'RecordAttendance',
@@ -203,8 +287,14 @@ export default {
   data() {
     return {
       isLoading: false,
-      attendanceRecord: {...attendanceRecordModal},
+      attendanceRecord: {
+        ...attendanceRecordModal,
+        breakStartTime: formatTime(new Date(), 'HH:mm'),
+        breakEndTime: formatTime(addHours(new Date(), 1), 'HH:mm'),
+        breakNote: 'Malica',
+      },
       latestAttendanceRecord: null,
+      isPunchedIn: false,
       rules: {
         date: [
           required,
@@ -212,18 +302,23 @@ export default {
           promiseDebounce(this.validateDate, 500),
         ],
         time: [required, promiseDebounce(this.validateDate, 500)],
+        breakStartTime: [false, promiseDebounce(this.validateDate, 500)],
+        breakEndTime: [false, promiseDebounce(this.validateDate, 500)],
         note: [shouldNotExceedCharLength(250)],
+        breakNote: [shouldNotExceedCharLength(250)],
       },
       previousRecordTimezone: null,
+      meta: {...metaRecord},
     };
   },
   computed: {
-    shouldShowBreakBtn() {
-      return (
-        this.latestAttendanceRecord &&
-        (this.latestAttendanceRecord?.attendanceType?.id === 'WORK_TIME' ||
-          this.latestAttendanceRecord?.attendanceType?.id === 'BREAK_TIME')
-      );
+    showBreakSection() {
+      // return (
+      //   this.latestAttendanceRecord &&
+      //   (this.latestAttendanceRecord?.attendanceType?.id === 'WORK_TIME' ||
+      //     this.latestAttendanceRecord?.attendanceType?.id === 'BREAK_TIME')
+      // );
+      return !!this.isPunchedIn;
     },
     getBreakBtnLabel() {
       if (this.latestAttendanceRecord) {
@@ -284,12 +379,14 @@ export default {
       })
       .then((response) => {
         if (response) {
-          const {data} = response.data;
+          const {data, meta} = response.data;
           this.latestAttendanceRecord = data;
+          this.isPunchedIn = !!data.punchIn.utcDate;
           this.attendanceRecord.previousRecord = {
             ...data.punchIn,
             attendanceType: data.attendanceType,
           };
+          this.meta = meta || {};
         }
       })
       .then(() => {
@@ -308,49 +405,22 @@ export default {
       const timezone = guessTimezone();
       const data = {
         date: this.attendanceRecord.date,
-        time: this.attendanceRecord.time,
+        breakStartTime: this.attendanceRecord.breakStartTime,
+        breakEndTime: this.attendanceRecord.breakEndTime,
         note: this.attendanceRecord.note,
         timezoneOffset:
           this.attendanceRecord.timezone?._offset ?? timezone.offset,
         timezoneName: this.attendanceRecord.timezone?.id ?? timezone.name,
+        breakNote: this.attendanceRecord.breakNote,
       };
       try {
-        if (
-          this.latestAttendanceRecord &&
-          this.latestAttendanceRecord?.attendanceType.id === 'WORK_TIME'
-        ) {
-          // if the user is checked in,
-          // you need to first check out && create a new attendance record with the correct type.
-
-          // check out the current record
-          await this.http.request({data, method: 'PUT'});
-          // create a new record with the BREAK type
-          await this.http.request({
-            data: {
-              ...data,
-              attendanceType: 'BREAK_TIME',
-            },
-            method: 'POST',
-          });
-        } else {
-          // if the user is checked in && the currect record attendanceType.id is BREAK_TIME,
-
-          // check out the current record
-          await this.http.request({
-            data: {
-              ...data,
-              attendanceType: 'BREAK_TIME',
-            },
-            method: 'PUT',
-          });
-          // create a new record with the WORK_TYPE type
-          await this.http.request({
-            data: {
-              ...data,
-            },
-            method: 'POST',
-          });
-        }
+        await this.http.request({
+          data: {
+            ...data,
+            attendanceType: 'BREAK_TIME',
+          },
+          method: 'POST',
+        });
 
         this.$toast.saveSuccess();
         reloadPage();

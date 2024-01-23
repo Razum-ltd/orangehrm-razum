@@ -49,18 +49,44 @@ class AttendanceDao extends BaseDao
     /**
      * @param int $employeeNumber
      * @param string[] $actionableStatesList
+     * @param string[] $includedAttendanceTypes
      * @return AttendanceRecord|null
      */
-    public function getLastPunchRecordByEmployeeNumberAndActionableList(int $employeeNumber, array $actionableStatesList): ?AttendanceRecord
-    {
+    public function getLastPunchRecordByEmployeeNumberAndActionableList(
+        int $employeeNumber,
+        array $actionableStatesList,
+        array $includedAttendanceTypes = [AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME]
+    ): ?AttendanceRecord {
         $q = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
         $q->andWhere('attendanceRecord.employee = :empNumber');
         $q->andWhere($q->expr()->in('attendanceRecord.state', ':state'))
             ->setParameter('state', $actionableStatesList);
         $q->setParameter('empNumber', $employeeNumber);
+        $q->andWhere($q->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
         $q->orderBy('attendanceRecord.id', ListSorter::DESCENDING);
         $q->setMaxResults(1);
         return $q->getQuery()->getOneOrNullResult();
+    }
+
+    /**
+     * @param int $employeeNumber
+     * @return array|null
+     */
+    public function getBreakPunchRecordList(int $employeeNumber, DateTime|null $date): ?array
+    {
+        $q = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
+        $q->setParameter('empNumber', $employeeNumber);
+        $q->andWhere('attendanceRecord.employee = :empNumber');
+        $q->setParameter('attendanceType', AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
+        $q->andWhere('attendanceRecord.attendanceType = :attendanceType');
+        if ($date instanceof DateTime) {
+            $q->andWhere('attendanceRecord.punchInUtcTime BETWEEN :from AND :to');
+            $q->setParameter('from', new DateTime($date->format("Y-m-d") . " 00:00:00"));
+            $q->setParameter('to', new DateTime($date->format("Y-m-d") . " 23:59:59"));
+        }
+        $q->orderBy('attendanceRecord.id', ListSorter::DESCENDING);
+        return $q->getQuery()->getResult();
     }
 
     /**
@@ -69,7 +95,7 @@ class AttendanceDao extends BaseDao
      * @param int $employeeNumber
      * @return bool
      */
-    public function checkForPunchOutOverLappingRecords(DateTime $punchOutTime, int $employeeNumber): bool
+    public function checkForPunchOutOverLappingRecords(DateTime $punchOutTime, int $employeeNumber, string $attendenceType = AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME): bool
     {
         $actionableStatesList = [AttendanceRecord::STATE_PUNCHED_IN];
         $attendanceRecord = $this->getLastPunchRecordByEmployeeNumberAndActionableList($employeeNumber, $actionableStatesList);
@@ -143,8 +169,13 @@ class AttendanceDao extends BaseDao
      * @param int|null $recordId
      * @return bool
      */
-    private function getCommonQueryForPunchOutOverlap(DateTime $punchInUtcTime, DateTime $punchOutTime, int $employeeNumber, ?int $recordId = null): bool
-    {
+    private function getCommonQueryForPunchOutOverlap(
+        DateTime $punchInUtcTime,
+        DateTime $punchOutTime,
+        int $employeeNumber,
+        ?int $recordId = null,
+        array $includedAttendanceTypes = [AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME]
+    ): bool {
         $q1 = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
         $q1->andWhere('attendanceRecord.employee = :empNumber');
         $q1->andWhere($q1->expr()->gt('attendanceRecord.punchInUtcTime', ':punchInUtcTime'))
@@ -156,9 +187,10 @@ class AttendanceDao extends BaseDao
             $q1->andWhere('attendanceRecord.id != :recordId');
             $q1->setParameter('recordId', $recordId);
         }
-
+        $q1->andWhere($q1->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
         /* @var AttendanceRecord[] $attendance */
-        $attendance =  $q1->getQuery()->execute();
+        $attendance = $q1->getQuery()->execute();
         if ((count($attendance) > 0)) {
             return false;
         }
@@ -175,6 +207,9 @@ class AttendanceDao extends BaseDao
             $q2->setParameter('recordId', $recordId);
         }
 
+        $q2->andWhere($q2->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
+
         if (($this->getPaginator($q2)->count() > 0)) {
             return false;
         }
@@ -190,6 +225,9 @@ class AttendanceDao extends BaseDao
             $q3->andWhere('attendanceRecord.id != :recordId');
             $q3->setParameter('recordId', $recordId);
         }
+        $q3->andWhere($q3->expr()->in('attendanceRecord.attendanceType', ':attendanceType'))
+            ->setParameter('attendanceType', $includedAttendanceTypes);
+
 
         if (($this->getPaginator($q3)->count() > 0)) {
             return false;
@@ -302,11 +340,13 @@ class AttendanceDao extends BaseDao
      * @param int $employeeNumber
      * @return AttendanceRecord|null
      */
-    public function getLatestAttendanceRecordByEmployeeNumber(int $employeeNumber): ?AttendanceRecord
+    public function getLatestAttendanceRecordByEmployeeNumber(int $employeeNumber, array $includedAttendanceTypes = [AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME]): ?AttendanceRecord
     {
         $q = $this->createQueryBuilder(AttendanceRecord::class, 'attendanceRecord');
         $q->andWhere('attendanceRecord.employee = :empNumber');
         $q->setParameter('empNumber', $employeeNumber);
+        $q->andWhere($q->expr()->in('attendanceRecord.attendanceType', ':attendanceType'));
+        $q->setParameter('attendanceType', $includedAttendanceTypes);
         $q->orderBy('attendanceRecord.id', ListSorter::DESCENDING);
         $q->setMaxResults(1);
 
@@ -574,7 +614,7 @@ class AttendanceDao extends BaseDao
      * @param EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams
      * @return Paginator
      */
-    private function getEmployeeAttendanceSummaryPaginator(EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams): Paginator
+    private function getEmployeeAttendanceSummaryPaginator(EmployeeAttendanceSummarySearchFilterParams $employeeAttendanceSummarySearchFilterParams): Paginator 
     {
         $q = $this->getEmployeeAttendanceSummaryQueryBuilderWrapper($employeeAttendanceSummarySearchFilterParams)->getQueryBuilder();
         $q->select(

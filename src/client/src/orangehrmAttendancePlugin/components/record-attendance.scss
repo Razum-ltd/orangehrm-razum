@@ -17,3 +17,16 @@
 .orangehrm-attendance-punchedIn-timezone {
   color: $oxd-interface-gray-color;
 }
+
+.orangehrm-break-section .oxd-form-actions {
+  justify-content: start;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.flex-center div {
+  width: 100%;
+}

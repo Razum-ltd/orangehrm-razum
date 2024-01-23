@@ -25,6 +25,7 @@ use OrangeHRM\Core\Api\CommonParams;
 use OrangeHRM\Core\Api\V2\Endpoint;
 use OrangeHRM\Core\Api\V2\EndpointResourceResult;
 use OrangeHRM\Core\Api\V2\EndpointResult;
+use OrangeHRM\Core\Api\V2\ParameterBag;
 use OrangeHRM\Core\Api\V2\RequestParams;
 use OrangeHRM\Core\Api\V2\ResourceEndpoint;
 use OrangeHRM\Core\Api\V2\Validator\ParamRule;
@@ -32,12 +33,14 @@ use OrangeHRM\Core\Api\V2\Validator\ParamRuleCollection;
 use OrangeHRM\Core\Api\V2\Validator\Rule;
 use OrangeHRM\Core\Api\V2\Validator\Rules;
 use OrangeHRM\Core\Traits\Auth\AuthUserTrait;
+use OrangeHRM\Core\Traits\Service\DateTimeHelperTrait;
 use OrangeHRM\Entity\AttendanceRecord;
 
 class EmployeeLatestAttendanceRecordAPI extends Endpoint implements ResourceEndpoint
 {
     use AttendanceServiceTrait;
     use AuthUserTrait;
+    use DateTimeHelperTrait;
 
     /**
      * @OA\Get(
@@ -73,12 +76,34 @@ class EmployeeLatestAttendanceRecordAPI extends Endpoint implements ResourceEndp
             CommonParams::PARAMETER_EMP_NUMBER,
             $this->getAuthUser()->getEmpNumber()
         );
+
         $attendanceRecord = $this->getAttendanceService()
             ->getAttendanceDao()
             ->getLatestAttendanceRecordByEmployeeNumber($employeeNumber);
+
+        $breakRecords = $this->getAttendanceService()->getAttendanceDao()->getBreakPunchRecordList(
+            $employeeNumber,
+            $attendanceRecord->getPunchInUtcTime()
+        );
+
+        $breakRecordsArray = [];
+
+        foreach ($breakRecords as $breakRecord) {
+            if ($breakRecord instanceof AttendanceRecord) {
+                $metaRecord = [
+                    'id' => $breakRecord->getId(),
+                    'breakNote' => $breakRecord->getPunchInNote(),
+                    'startTime' => $this->getDateTimeHelper()->formatDateTimeToTimeString($breakRecord->getPunchInUserTime()),
+                    'endTime' => $this->getDateTimeHelper()->formatDateTimeToTimeString($breakRecord->getPunchOutUtcTime())
+                ];
+
+                $breakRecordsArray[] = $metaRecord;
+            }
+        }
+
         $this->throwRecordNotFoundExceptionIfNotExist($attendanceRecord, AttendanceRecord::class);
 
-        return new EndpointResourceResult(EmployeeLatestAttendanceRecordModel::class, $attendanceRecord);
+        return new EndpointResourceResult(EmployeeLatestAttendanceRecordModel::class, $attendanceRecord, new ParameterBag($breakRecordsArray));
     }
 
     /**
@@ -95,6 +120,13 @@ class EmployeeLatestAttendanceRecordAPI extends Endpoint implements ResourceEndp
                     CommonParams::PARAMETER_EMP_NUMBER,
                     new Rule(Rules::IN_ACCESSIBLE_EMP_NUMBERS)
                 )
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    EmployeeAttendanceRecordAPI::PARAMETER_ATTENDANCE_TYPE,
+                    new Rule(Rules::STRING_TYPE),
+                ),
+                true
             )
         );
     }
