@@ -1,0 +1,16 @@
+##########################
+#        Attendance      #
+##########################
+
+apiv2_pim_employees_personal_details:
+  description: 'Employee - Employee Personal Detail'
+  api: OrangeHRM\Pim\Api\EmployeePersonalDetailAPI
+  module: pim
+  allowed:
+    read: true
+    create: false
+    update: false
+    delete: false
+  permissions:
+    - { role: Admin, permission: { read: true, create: false, update: false, delete: false } }
+    - { role: ESS, permission: { read: true, create: false, update: false, delete: false } }
