@@ -48,10 +48,10 @@ class AttendanceCorrectionService
     {
         $messages = [];
         // if the current time is over 17:00 we can run the correction
-        if (!(date('H:i:s') > '17:00:00')) {
+        /*if (!(date('H:i:s') > '17:00:00')) {
             $this->getLogger()->alert('Tried to run the correction before 17:00.');
             throw new \Exception('Correction can be run after 17:00.');
-        }
+        }*/
         $messages[] = $this->checkEmployeesBreak();
         $messages[] = $this->checkEmployeesAttendance();
 
@@ -325,6 +325,11 @@ class AttendanceCorrectionService
             /** @var AttendanceRecord $attendanceRecord */
             foreach ($this->allEmployeeAttendance as $attendanceRecord) {
                 $employee = $attendanceRecord->getEmployee();
+
+                // Skip employees that have automatic punch out disabled.
+                if ($employee->getAutomaticPunchOut() !== 1) {
+                    continue;
+                }
                 if (!isset($grouppedAttendanceRecords[$employee->getEmpNumber()])) {
                     $grouppedAttendanceRecords[$employee->getEmpNumber()] = [];
                 }
