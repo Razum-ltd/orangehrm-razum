@@ -265,9 +265,9 @@ class AttendanceCorrectionService
                     $breakRecord->setPunchInNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
                     $breakRecord->setPunchOutNote(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
                     // set 30 minutes of break time to the $breakRecord at 11:30 am
-                    $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+                    $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00'));
                     $breakRecord->setPunchInTimezoneName(self::TIMEZONE);
-                    $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
+                    $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 10:00:00'));
                     $breakRecord->setPunchOutTimezoneName(self::TIMEZONE);
                     // add the break record to the database
                     $this->getAttendanceService()
@@ -279,7 +279,7 @@ class AttendanceCorrectionService
                     // Check if we need to fix any overlapping records
                     $overlappingRecord = null;
                     foreach ($records as $record) {
-                        if ($record->getPunchInUserTime()->format('H:i:s') <= '11:30:00' && $record->getPunchOutUserTime()->format('H:i:s') >= '12:00:00') {
+                        if ($record->getPunchInUserTime()->format('H:i:s') <= '11:30:00' && $record->getPunchOutUserTime() && $record->getPunchOutUserTime()->format('H:i:s') >= '12:00:00') {
                             $overlappingRecord = $record;
                             break;
                         }
