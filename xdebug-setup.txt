@@ -1,0 +1,22 @@
+In order to debug code with xdebug add the following lines to 
+`/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini`
+
+zend_extension=xdebug
+xdebug.mode=debug
+xdebug.start_with_request=yes
+xdebug.start_upon_error=yes
+xdebug.client_host=<your local machine ip>
+xdebug.discover_client_host=true
+xdebug.client_port=9003
+
+For vscode download xdebug extension and add a entry to launch.json
+
+    {
+        "name": "Listen for Xdebug",
+        "type": "php",
+        "request": "launch",
+        "port": 9003,
+        "pathMappings": {
+            "/var/www/html": "${workspaceFolder}/orangehrm",
+        }
+    }

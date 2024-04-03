@@ -71,4 +71,21 @@ RUN { \
 
 # RUN pecl install xdebug && docker-php-ext-enable xdebug ## Uncomment to install xdebug for debugging
 
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Install dos2unix
+RUN apt-get update && apt-get install -y dos2unix
+
+
+# Copy hello-cron file to the cron.d directory
+COPY attendance_cron /etc/cron.d/attendance_cron
+ 
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/attendance_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/attendance_cron 
+
+
 VOLUME ["/var/www/html"]

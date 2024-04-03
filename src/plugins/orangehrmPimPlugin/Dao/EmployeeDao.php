@@ -88,7 +88,8 @@ class EmployeeDao extends BaseDao
 
         $this->setSortingAndPaginationParams($q, $employeeSearchParamHolder);
 
-        if (is_null($employeeSearchParamHolder->getIncludeEmployees()) ||
+        if (
+            is_null($employeeSearchParamHolder->getIncludeEmployees()) ||
             $employeeSearchParamHolder->getIncludeEmployees() ===
             EmployeeSearchFilterParams::INCLUDE_EMPLOYEES_ONLY_CURRENT
         ) {
@@ -195,6 +196,11 @@ class EmployeeDao extends BaseDao
             }
             $q->andWhere($q->expr()->in('supervisor.empNumber', ':supervisorEmpNumbers'))
                 ->setParameter('supervisorEmpNumbers', $employeeSearchParamHolder->getSupervisorEmpNumbers());
+        }
+
+        if (!is_null($employeeSearchParamHolder->getAutomaticPunchOut())) {
+            $q->andWhere('employee.automaticPunchOut = :automaticPunchOut')
+                ->setParameter('automaticPunchOut', $employeeSearchParamHolder->getAutomaticPunchOut());
         }
 
         $q->andWhere($q->expr()->isNull('employee.purgedAt'));
@@ -480,7 +486,7 @@ class EmployeeDao extends BaseDao
     {
         $q = $this->createQueryBuilder(Employee::class, 'e');
         $q->select('e.workEmail, e.otherEmail');
-        return  $q->getQuery()->getArrayResult();
+        return $q->getQuery()->getArrayResult();
     }
 
     /**

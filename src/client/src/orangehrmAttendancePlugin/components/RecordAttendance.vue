@@ -130,7 +130,7 @@
             <div>
               <time-input
                 v-model="attendanceRecord.breakStartTime"
-                :label="$t('attendance.break_from')"
+                label="Break From"
                 :disabled="!isEditable"
                 :rules="rules.time"
                 type="time"
@@ -143,7 +143,7 @@
             <div>
               <time-input
                 v-model="attendanceRecord.breakEndTime"
-                :label="$t('attendance.break_to')"
+                label="Break To"
                 :disabled="!isEditable"
                 :rules="rules.time"
                 type="time"
@@ -156,7 +156,7 @@
             <div>
               <oxd-input-field
                 v-model="attendanceRecord.breakNote"
-                :label="$t('attendance.break_note')"
+                label="Break Note"
                 :placeholder="$t('general.type_here')"
                 type="textarea"
               />
@@ -166,7 +166,7 @@
             <div>
               <oxd-button
                 icon-name="clock-fill"
-                :label="$t('attendance.set_break')"
+                label="Set Break"
                 @click="handleBreak"
               />
             </div>
@@ -175,13 +175,6 @@
       </oxd-form-row>
     </div>
     <oxd-form-actions>
-      <required-text />
-      <!-- <oxd-button
-        v-if="shouldShowBreakBtn"
-        icon-name="clock-fill"
-        :label="getBreakBtnLabel"
-        @click="handleBreak"
-      /> -->
       <submit-button
         v-if="
           (attendanceRecord.previousRecord &&

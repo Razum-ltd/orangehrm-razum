@@ -2,6 +2,7 @@
 
 namespace OrangeHRM\Attendance\Service;
 
+use DateTime;
 use OrangeHRM\Attendance\Dto\AttendanceRecordSearchFilterParams;
 use OrangeHRM\Attendance\Traits\Service\AttendanceServiceTrait;
 use OrangeHRM\Core\Service\DateTimeHelperService;
@@ -9,6 +10,7 @@ use OrangeHRM\Core\Traits\LoggerTrait;
 use OrangeHRM\Entity\AttendanceRecord;
 use OrangeHRM\Entity\Employee;
 use OrangeHRM\Entity\Leave;
+use OrangeHRM\Leave\Traits\Service\HolidayServiceTrait;
 use OrangeHRM\Leave\Traits\Service\LeaveRequestServiceTrait;
 use OrangeHRM\Leave\Dto\EmployeeLeaveSearchFilterParams;
 use OrangeHRM\Pim\Dto\EmployeeSearchFilterParams;
@@ -19,11 +21,21 @@ class AttendanceCorrectionService
     use LeaveRequestServiceTrait;
     use AttendanceServiceTrait;
     use EmployeeServiceTrait;
+    use HolidayServiceTrait;
     use LoggerTrait;
+
 
     public const TIMEZONE = 'Europe/Ljubljana';
     public const WORK_HOURS = 28800; // 8 hours in seconds
     public const BREAK_TIME = 1800; // 30 minutes in seconds
+
+    public const AUTOMATIC_PUNCH_IN_NOTE_WORK = "WORK_IN";
+
+    public const AUTOMATIC_PUNCH_OUT_NOTE_WORK = "WORK_OUT";
+
+    public const AUTOMATIC_PUNCH_IN_NOTE_BREAK = "BREAK_IN";
+
+    public const AUTOMATIC_PUNCH_OUT_NOTE_BREAK = "BREAK_OUT";
 
     /** @var AttendanceRecord[] $allEmployeeAttendance */
     private ?array $allEmployeeAttendance = null;
@@ -46,17 +58,132 @@ class AttendanceCorrectionService
 
     public function runCorrection()
     {
+        $today = new DateTime();
+        $isHoliday = $this->getHolidayService()->isHoliday($today);
+        $isWeekend = $this->isWeekend($today);
+
+        if ($isHoliday || $isWeekend) {
+            $this->getLogger()->alert('Tried to run correction on a holiday or a weekend.');
+            throw new \Exception('Correction cannot be run for holiday or weekend.');
+        }
+
         $messages = [];
+
+        // Old functionality. Deprecated.
         // if the current time is over 17:00 we can run the correction
         /*if (!(date('H:i:s') > '17:00:00')) {
             $this->getLogger()->alert('Tried to run the correction before 17:00.');
             throw new \Exception('Correction can be run after 17:00.');
         }*/
-        $messages[] = $this->checkEmployeesBreak();
-        $messages[] = $this->checkEmployeesAttendance();
+        //$messages[] = $this->checkEmployeesBreak();
+        //$messages[] = $this->checkEmployeesAttendance();
+
+        $messages[] = $this->getAutomaticAttendanceCandidatesAndExecute();
 
         return $messages;
     }
+
+    private function getAutomaticAttendanceCandidatesAndExecute()
+    {
+        $result = new \stdClass();
+        $result->success = array(["Employees that has been automatically punched in and out"]);
+        $result->error = array(["Attendance record already exists. Skipping employees:"]);
+
+        $employeeSearchParam = new EmployeeSearchFilterParams();
+
+        // Filter employess that have automatic punch out enabled
+        $employeeSearchParam->setAutomaticPunchOut(1);
+
+        $employees = $this->getEmployeeService()
+            ->getEmployeeDao()
+            ->getEmployeeList($employeeSearchParam);
+
+        foreach ($employees as $employee) {
+
+            if ($employee instanceof Employee) {
+                $empNumber = $employee->getEmpNumber();
+
+                if ($employee && $empNumber) {
+                    $leave = $this->getLeaveForEmployeeEmp(
+                        $employee->getEmpNumber(),
+                        $this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 00:00:00'),
+                        $this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 23:59:59')
+                    );
+                }
+
+
+                $todayStart = new DateTime('today midnight');
+                $todayEnd = new DateTime('today 23:59:59');
+                $attendanceRecordSearchParams = new AttendanceRecordSearchFilterParams();
+                $attendanceRecordSearchParams->setEmployeeNumbers([$empNumber]);
+                $attendanceRecordSearchParams->setFromDate($todayStart);
+                $attendanceRecordSearchParams->setToDate($todayEnd);
+                $recordExists = $this->getAttendanceService()->getAttendanceDao()->getAttendanceRecordList($attendanceRecordSearchParams);
+
+                if ($recordExists && count($recordExists) > 0) {
+                    $result->error[1][] = "{$employee->getFirstName()} {$employee->getLastName()} ({$employee->getEmployeeId()})";
+                    continue;
+                }
+
+                if ($employee && !$leave) {
+                    $result->success[1][] = $this->handleAutomaticAttendance($employee);
+                }
+
+
+            }
+        }
+        return $result;
+    }
+
+
+    private function handleAutomaticAttendance(Employee $employee)
+    {
+
+        // Work Record
+        $workRecord = new AttendanceRecord();
+        $workRecord->setEmployee($employee);
+        $workRecord->setPunchInTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecord->setPunchOutTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 8:00:00'));
+        $workRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 16:00:00'));
+        $workRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 6:00:00')); // -2 because UTC
+        $workRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 14:00:00')); // -2 because UTC
+        $workRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
+        $workRecord->setPunchInTimezoneName(self::TIMEZONE);
+        $workRecord->setPunchOutTimezoneName(self::TIMEZONE);
+        $workRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $workRecord->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_WORK);
+        $workRecord->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_WORK);
+
+        // Break record
+        $breakRecord = new AttendanceRecord();
+        $breakRecord->setEmployee($employee);
+        $breakRecord->setPunchInTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $breakRecord->setPunchOutTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $breakRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+        $breakRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
+        $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00')); // -2 because UTC
+        $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 10:00:00')); // -2 because UTC
+        $breakRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
+        $breakRecord->setPunchInTimezoneName(self::TIMEZONE);
+        $breakRecord->setPunchOutTimezoneName(self::TIMEZONE);
+        $breakRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $breakRecord->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_BREAK);
+        $breakRecord->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_BREAK);
+
+        $this->getAttendanceService()->savePunchRecord($workRecord);
+        $this->getAttendanceService()->savePunchRecord($breakRecord);
+
+
+
+        return "{$employee->getFirstName()} {$employee->getLastName()} ({$employee->getEmployeeId()})";
+    }
+
+    private function isWeekend(DateTime $date)
+    {
+        return $date->format('w') == 0 || $date->format('w') == 6;
+    }
+
 
     private function checkEmployeesAttendance()
     {

@@ -30,7 +30,7 @@ class GenericBasicDisplayField extends BasicDisplayField
         'maritalStatus' => ['entityAlias' => 'employee', 'field' => 'maritalStatus'],
         'driversLicenseNumber' => ['entityAlias' => 'employee', 'field' => 'drivingLicenseNo'],
         'otherId' => ['entityAlias' => 'employee', 'field' => 'otherId'],
-        'automaticPunchOut' => ['entityAlias' => 'automaticPunchOut', 'field' => 'automatichPunchOut'],
+        'automaticPunchOut' => ['entityAlias' => 'automaticPunchOut', 'field' => 'automaticPunchOut'],
         'employeeNationality' => ['entityAlias' => 'nationality', 'field' => 'name'],
 
         // Contact details
