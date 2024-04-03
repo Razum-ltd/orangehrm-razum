@@ -50,7 +50,8 @@ class EmployeeModel implements Normalizable
                 'firstName',
                 'middleName',
                 'employeeId',
-                'terminationId',
+                'terminationId',,
+                'automaticPunchOut'
             ]
         );
     }

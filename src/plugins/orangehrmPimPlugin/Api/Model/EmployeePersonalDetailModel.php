@@ -53,6 +53,7 @@ class EmployeePersonalDetailModel implements Normalizable
             ['getEmployeeTerminationRecord', 'getId'],
             ['getNationality', 'getId'],
             ['getNationality', 'getName'],
+            'automaticPunchOut'
         ];
 
         $attributeNames = [
@@ -70,6 +71,7 @@ class EmployeePersonalDetailModel implements Normalizable
             'terminationId',
             ['nationality', 'id'],
             ['nationality', 'name'],
+            'automaticPunchOut'
         ];
 
         if ($showSsn) {

@@ -70,6 +70,13 @@
                 :rules="rules.otherId"
               />
             </oxd-grid-item>
+            <oxd-grid-item class="d-flex align-items-center">
+              <oxd-input-field
+                v-model="employee.automaticPunchOut"
+                option-label="Automatic Punch Put"
+                type="checkbox"
+              />
+            </oxd-grid-item>
           </oxd-grid>
           <oxd-grid :cols="3" class="orangehrm-full-width-grid">
             <oxd-grid-item>
@@ -220,6 +227,7 @@ const employeeModel = {
   nickname: '',
   smoker: '',
   militaryService: '',
+  automaticPunchOut: 0,
 };
 
 export default {
@@ -353,6 +361,7 @@ export default {
             militaryService: this.showDeprecatedFields
               ? this.employee.militaryService
               : undefined,
+            automaticPunchOut: this.employee.automaticPunchOut ? 1 : 0,
           },
         })
         .then((response) => {
@@ -366,7 +375,11 @@ export default {
 
     updateModel(response) {
       const {data} = response.data;
-      this.employee = {...employeeModel, ...data};
+      this.employee = {
+        ...employeeModel,
+        ...data,
+        automaticPunchOut: data.automaticPunchOut === 1 ? true : false,
+      };
       this.employee.maritalStatus = this.maritalStatuses.find(
         (item) => item.id === data.maritalStatus,
       );

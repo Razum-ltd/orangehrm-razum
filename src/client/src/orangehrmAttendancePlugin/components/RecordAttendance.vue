@@ -219,7 +219,6 @@ import useDateFormat from '@/core/util/composable/useDateFormat';
 import {reloadPage, navigate} from '@/core/util/helper/navigation';
 import TimezoneDropdown from '@/orangehrmAttendancePlugin/components/TimezoneDropdown.vue';
 import TimeInput from '../../core/components/time/TimeInput.vue';
-import {addHours} from 'date-fns';
 
 const attendanceRecordModal = {
   date: null,
@@ -289,8 +288,8 @@ export default {
       isLoading: false,
       attendanceRecord: {
         ...attendanceRecordModal,
-        breakStartTime: formatTime(new Date(), 'HH:mm'),
-        breakEndTime: formatTime(addHours(new Date(), 1), 'HH:mm'),
+        breakStartTime: formatTime(new Date('2024-01-01 11:30:00'), 'HH:mm'),
+        breakEndTime: formatTime(new Date('2024-01-01 12:00:00'), 'HH:mm'),
         breakNote: 'Malica',
       },
       latestAttendanceRecord: null,

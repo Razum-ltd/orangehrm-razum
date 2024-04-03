@@ -43,6 +43,8 @@ class EmployeePersonalDetailAPI extends Endpoint implements ResourceEndpoint
     public const PARAMETER_LAST_NAME = 'lastName';
     public const PARAMETER_EMPLOYEE_ID = 'employeeId';
     public const PARAMETER_OTHER_ID = 'otherId';
+
+    public const PARAMETER_AUTOMATIC_PUNCH_OUT = 'automaticPunchOut';
     public const PARAMETER_DRIVING_LICENSE_NO = 'drivingLicenseNo';
     public const PARAMETER_DRIVING_LICENSE_EXPIRED_DATE = 'drivingLicenseExpiredDate';
     public const PARAMETER_GENDER = 'gender';
@@ -54,7 +56,7 @@ class EmployeePersonalDetailAPI extends Endpoint implements ResourceEndpoint
     public const PARAMETER_NICKNAME = 'nickname';
     public const PARAMETER_SMOKER = 'smoker';
     public const PARAMETER_MILITARY_SERVICE = 'militaryService';
-
+ 
     // Country Specific
     public const PARAMETER_SSN_NUMBER = 'ssnNumber';
     public const PARAMETER_SIN_NUMBER = 'sinNumber';
@@ -143,6 +145,10 @@ class EmployeePersonalDetailAPI extends Endpoint implements ResourceEndpoint
         );
         $employee->getDecorator()->setNationality(
             $this->getRequestParams()->getIntOrNull(RequestParams::PARAM_TYPE_BODY, self::PARAMETER_NATIONALITY_ID)
+        );
+
+        $employee->setAutomaticPunchOut(
+            $this->getRequestParams()->getIntOrNull(RequestParams::PARAM_TYPE_BODY, self::PARAMETER_AUTOMATIC_PUNCH_OUT)
         );
 
         $showDeprecatedFields = $this->getConfigService()->showPimDeprecatedFields();
@@ -271,6 +277,12 @@ class EmployeePersonalDetailAPI extends Endpoint implements ResourceEndpoint
                 new ParamRule(
                     self::PARAMETER_NATIONALITY_ID,
                     new Rule(Rules::POSITIVE),
+                )
+            ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    self::PARAMETER_AUTOMATIC_PUNCH_OUT,
+                    new Rule(Rules::INT_VAL)
                 )
             ),
         ];

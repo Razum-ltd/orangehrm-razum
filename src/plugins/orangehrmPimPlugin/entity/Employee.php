@@ -161,6 +161,14 @@ class Employee
      */
     private ?string $otherId = '';
 
+     /**
+     * @var int|null
+     *
+     * @ORM\Column(name="emp_automatic_punch_out", type="integer", length=100, nullable=true, options={"default" : false})
+     */
+
+    private ?int $automaticPunchOut = 0;
+
     /**
      * @var string|null
      *
@@ -814,6 +822,25 @@ class Employee
     {
         $this->otherId = $otherId;
     }
+
+
+
+    /**
+     * @return int|null
+     */
+    public function getAutomaticPunchOut(): ?int
+    {
+        return $this->automaticPunchOut;
+    }
+
+    /**
+     * @param int|null $automaticPunchOut
+     */
+    public function setAutomaticPunchOut(?int $automaticPunchOut): void
+    {
+        $this->automaticPunchOut = $automaticPunchOut;
+    }
+
 
     /**
      * @return string|null

@@ -33,6 +33,7 @@ use OrangeHRM\Entity\Employee;
  *     @OA\Property(property="middleName", type="string"),
  *     @OA\Property(property="employeeId", type="string"),
  *     @OA\Property(property="terminationId", type="integer"),
+ *     @OA\Property(property="automaticPunchOut", type="integer"),
  * )
  */
 class EmployeeModel implements Normalizable
@@ -53,6 +54,7 @@ class EmployeeModel implements Normalizable
                 'middleName',
                 'employeeId',
                 ['getEmployeeTerminationRecord', 'getId'],
+                'automaticPunchOut'
             ]
         );
         $this->setAttributeNames(
@@ -63,6 +65,7 @@ class EmployeeModel implements Normalizable
                 'middleName',
                 'employeeId',
                 'terminationId',
+                'automaticPunchOut'
             ]
         );
     }

@@ -37,6 +37,7 @@ class EmployeeSearchFilterParams extends FilterParams
         'empStatus.name',
         'subunit.name',
         'supervisor.firstName',
+        'employee.automaticPunchOut'
     ];
 
     public const INCLUDE_EMPLOYEES_ONLY_CURRENT = 'onlyCurrent';
@@ -89,6 +90,11 @@ class EmployeeSearchFilterParams extends FilterParams
      * @var int|null
      */
     protected ?int $locationId = null;
+
+    /**
+     * @var int|null
+     */
+    protected ?int $automaticPunchOut = null;
 
     public function __construct()
     {
@@ -259,5 +265,16 @@ class EmployeeSearchFilterParams extends FilterParams
     public function setLocationId(?int $locationId): void
     {
         $this->locationId = $locationId;
+    }
+
+    public function setAutomaticPunchOut(?int $automaticPunchOut): void
+    {
+        $this->automaticPunchOut = $automaticPunchOut;
+    }
+
+
+    public function getAutomaticPunchOut(): ?int
+    {
+        return $this->automaticPunchOut;
     }
 }

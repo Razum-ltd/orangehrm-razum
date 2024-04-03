@@ -69,4 +69,6 @@ RUN { \
 		a2enmod rewrite; \
 	fi;
 
+# RUN pecl install xdebug && docker-php-ext-enable xdebug ## Uncomment to install xdebug for debugging
+
 VOLUME ["/var/www/html"]
