@@ -54,6 +54,25 @@ RUN { \
 		a2enmod rewrite; \
 	fi;
 
+
+
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Install dos2unix
+RUN apt-get update && apt-get install -y dos2unix
+
+
+# Copy hello-cron file to the cron.d directory
+COPY attendance_cron /etc/cron.d/attendance_cron
+ 
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/attendance_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/attendance_cron 
+
+
 # Node and Yarn
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
 	&& . $HOME/.nvm/nvm.sh \
