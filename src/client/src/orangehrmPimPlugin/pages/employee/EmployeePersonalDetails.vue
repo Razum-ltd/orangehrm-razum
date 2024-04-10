@@ -73,7 +73,7 @@
             <oxd-grid-item class="d-flex align-items-center">
               <oxd-input-field
                 v-model="employee.automaticPunchOut"
-                option-label="Automatic Punch Put"
+                option-label="Automatic Attendance Punch In/Out"
                 type="checkbox"
               />
             </oxd-grid-item>
