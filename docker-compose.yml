@@ -23,6 +23,9 @@ services:
     #volumes:
     #  - /docker/orangehrm/html:/var/www/html:delegated
     environment:
+      - ORANGEHRM_DATABASE_HOST=mariadb
+      - ORANGEHRM_DATABASE_NAME=${ORANGEHRM_DATABASE_NAME}
+      - ORANGEHRM_DATABASE_PASSWORD=${ORANGEHRM_DATABASE_PASSWORD}
       - VIRTUAL_HOST=hrm.dev.razum.si
       - VIRTUAL_PORT=80
     networks:
