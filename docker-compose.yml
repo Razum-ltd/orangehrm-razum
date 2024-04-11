@@ -18,10 +18,10 @@ services:
  
   orangehrm:
     container_name: orangehrm
-    build: ./orangehrm
+    build: ./
     restart: unless-stopped
     volumes:
-      - orangehrm:/var/www/html:delegated
+      - .:/var/www/html:delegated
     ports:
       - 8000:80
       - 8443:443
