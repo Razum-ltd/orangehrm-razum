@@ -23,6 +23,7 @@ services:
     #volumes:
     #  - /docker/orangehrm/html:/var/www/html:delegated
     environment:
+      - ORANGEHRM_DATABASE_USER=${ORANGEHRM_DATABASE_USER}
       - ORANGEHRM_DATABASE_HOST=mariadb
       - ORANGEHRM_DATABASE_NAME=${ORANGEHRM_DATABASE_NAME}
       - ORANGEHRM_DATABASE_PASSWORD=${ORANGEHRM_DATABASE_PASSWORD}
