@@ -6,7 +6,7 @@ services:
     image: mariadb:10.8-jammy
     restart: unless-stopped
     volumes:
-      - ./mariadb:/var/lib/mysql
+      - /docker/orangehrm/db:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_ROOT_USER=root
