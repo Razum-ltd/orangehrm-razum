@@ -18,3 +18,4 @@ src/plugins/orangehrmCalendarPlugin/config/credentials-razum.json
 .php-cs-fixer.cache
 .php-cs-fixer.php
 var
+mariadb
