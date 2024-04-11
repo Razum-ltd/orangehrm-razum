@@ -22,9 +22,9 @@ services:
     restart: unless-stopped
     volumes:
       - .:/var/www/html:delegated
-    ports:
-      - 8000:80
-      - 8443:443
+    environment:
+      - VIRTUAL_HOST=hrm.dev.razum.si
+      - VIRTUAL_PORT=80
     networks:
       - orangehrm
     depends_on:
