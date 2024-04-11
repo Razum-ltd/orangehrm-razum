@@ -20,8 +20,8 @@ services:
     container_name: orangehrm
     build: ./
     restart: unless-stopped
-    volumes:
-      - /docker/orangehrm/html:/var/www/html:delegated
+    #volumes:
+    #  - /docker/orangehrm/html:/var/www/html:delegated
     environment:
       - VIRTUAL_HOST=hrm.dev.razum.si
       - VIRTUAL_PORT=80
