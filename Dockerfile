@@ -80,6 +80,8 @@ RUN apt-get update && apt-get install -y dos2unix
 
 # Copy hello-cron file to the cron.d directory
 COPY attendance_cron /etc/cron.d/attendance_cron
+
+COPY devTools /var/www/html/devTools
  
 # Give execution rights on the cron job
 RUN chmod 0644 /etc/cron.d/attendance_cron
