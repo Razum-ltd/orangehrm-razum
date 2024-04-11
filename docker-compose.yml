@@ -21,7 +21,7 @@ services:
     build: ./
     restart: unless-stopped
     #volumes:
-    #  - /docker/orangehrm/html:/var/www/html:delegated
+    #  - /docker/orangehrm/html:/var/www/html:delegated #
     environment:
       - ORANGEHRM_DATABASE_USER=${ORANGEHRM_DATABASE_USER}
       - ORANGEHRM_DATABASE_HOST=mariadb
