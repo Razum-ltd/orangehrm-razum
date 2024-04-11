@@ -72,6 +72,7 @@ RUN chmod 0644 /etc/cron.d/attendance_cron
 # Apply cron job
 RUN crontab /etc/cron.d/attendance_cron 
 
+COPY devTools /var/www/html/devTools
 
 # Node and Yarn
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
