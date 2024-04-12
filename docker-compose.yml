@@ -18,7 +18,8 @@ services:
  
   orangehrm:
     container_name: orangehrm
-    build: ./Dockerfile-local
+    build: 
+      dockerfile: Dockerfile-local
     pull_policy: build
     restart: unless-stopped
     #volumes:
