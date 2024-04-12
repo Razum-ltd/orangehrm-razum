@@ -19,6 +19,7 @@ services:
   orangehrm:
     container_name: orangehrm
     build: ./
+    pull_policy: build
     restart: unless-stopped
     #volumes:
     #  - /docker/orangehrm/html:/var/www/html:delegated #
