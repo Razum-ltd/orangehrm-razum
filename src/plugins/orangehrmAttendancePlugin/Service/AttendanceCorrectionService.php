@@ -30,8 +30,13 @@ class AttendanceCorrectionService
     public const BREAK_TIME = 1800; // 30 minutes in seconds
 
     public const AUTOMATIC_PUNCH_IN_NOTE_WORK = "WORK_IN";
+    public const AUTOMATIC_PUNCH_IN_NOTE_WORK_BEFORE_BREAK = "WORK_IN_BEFORE_BREAK";
 
-    public const AUTOMATIC_PUNCH_OUT_NOTE_WORK = "WORK_OUT";
+    public const AUTOMATIC_PUNCH_IN_NOTE_WORK_AFTER_BREAK = "WORK_IN_AFTER_BREAK";
+
+    public const AUTOMATIC_PUNCH_OUT_NOTE_WORK_BEFORE_BREAK = "WORK_OUT_BEFORE_BREAK";
+
+    public const AUTOMATIC_PUNCH_OUT_NOTE_WORK_AFTER_BREAK = "WORK_OUT_AFTER_BREAK";
 
     public const AUTOMATIC_PUNCH_IN_NOTE_BREAK = "BREAK_IN";
 
@@ -140,26 +145,43 @@ class AttendanceCorrectionService
     {
 
         // Work Record
-        $workRecord = new AttendanceRecord();
-        $workRecord->setEmployee($employee);
-        $workRecord->setPunchInTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $workRecord->setPunchOutTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $workRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 8:00:00'));
-        $workRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 16:00:00'));
-        $workRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 6:00:00')); // -2 because UTC
-        $workRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 14:00:00')); // -2 because UTC
-        $workRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
-        $workRecord->setPunchInTimezoneName(self::TIMEZONE);
-        $workRecord->setPunchOutTimezoneName(self::TIMEZONE);
-        $workRecord->setState(AttendanceRecord::STATE_PUNCHED_OUT);
-        $workRecord->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_WORK);
-        $workRecord->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_WORK);
+
+
+        $workRecordBeforeBreak = new AttendanceRecord();
+        $workRecordBeforeBreak->setEmployee($employee);
+        $workRecordBeforeBreak->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecordBeforeBreak->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecordBeforeBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 8:00:00'));
+        $workRecordBeforeBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
+        $workRecordBeforeBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 6:00:00')); // -2 because UTC
+        $workRecordBeforeBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00')); // -2 because UTC
+        $workRecordBeforeBreak->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
+        $workRecordBeforeBreak->setPunchInTimezoneName(self::TIMEZONE);
+        $workRecordBeforeBreak->setPunchOutTimezoneName(self::TIMEZONE);
+        $workRecordBeforeBreak->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $workRecordBeforeBreak->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_WORK_BEFORE_BREAK);
+        $workRecordBeforeBreak->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_WORK_BEFORE_BREAK);
+
+        $workRecordAfterBreak = new AttendanceRecord();
+        $workRecordAfterBreak->setEmployee($employee);
+        $workRecordAfterBreak->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecordAfterBreak->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $workRecordAfterBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
+        $workRecordAfterBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 16:00:00'));
+        $workRecordAfterBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 10:00:00')); // -2 because UTC
+        $workRecordAfterBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 14:00:00')); // -2 because UTC
+        $workRecordAfterBreak->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
+        $workRecordAfterBreak->setPunchInTimezoneName(self::TIMEZONE);
+        $workRecordAfterBreak->setPunchOutTimezoneName(self::TIMEZONE);
+        $workRecordAfterBreak->setState(AttendanceRecord::STATE_PUNCHED_OUT);
+        $workRecordAfterBreak->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_WORK_AFTER_BREAK);
+        $workRecordAfterBreak->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_WORK_AFTER_BREAK);
 
         // Break record
         $breakRecord = new AttendanceRecord();
         $breakRecord->setEmployee($employee);
-        $breakRecord->setPunchInTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $breakRecord->setPunchOutTimeOffset('2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $breakRecord->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
+        $breakRecord->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
         $breakRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
         $breakRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
         $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00')); // -2 because UTC
@@ -171,8 +193,9 @@ class AttendanceCorrectionService
         $breakRecord->setPunchInNote(self::AUTOMATIC_PUNCH_IN_NOTE_BREAK);
         $breakRecord->setPunchOutNote(self::AUTOMATIC_PUNCH_OUT_NOTE_BREAK);
 
-        $this->getAttendanceService()->savePunchRecord($workRecord);
+        $this->getAttendanceService()->savePunchRecord($workRecordBeforeBreak);
         $this->getAttendanceService()->savePunchRecord($breakRecord);
+        $this->getAttendanceService()->savePunchRecord($workRecordAfterBreak);
 
 
 
