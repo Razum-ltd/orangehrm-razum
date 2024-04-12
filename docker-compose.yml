@@ -22,6 +22,7 @@ services:
     restart: unless-stopped
     #volumes:
     #  - /docker/orangehrm/html:/var/www/html:delegated #
+    # comment for redeploy
     environment:
       - ORANGEHRM_DATABASE_USER=${ORANGEHRM_DATABASE_USER}
       - ORANGEHRM_DATABASE_HOST=mariadb
