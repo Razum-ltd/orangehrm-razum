@@ -33,7 +33,7 @@
       <div>
         <oxd-text tag="p">
           {{ date }}
-          <small class="timezone"> GMT {{ offset ? offset : '00:00' }} </small>
+          <!-- <small class="timezone"> GMT {{ offset ? offset : '00:00' }} </small> -->
         </oxd-text>
         <strong>
           {{ time }}
