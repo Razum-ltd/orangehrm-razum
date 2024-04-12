@@ -82,9 +82,10 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 	&& npm install -g yarn;
 
 COPY . /var/www/html/
+RUN mkdir -p /var/www/html/var/session
 RUN set -ex; \
 	chown www-data:www-data /var/www/html; \
-	chown -R www-data:www-data /var/www/html/src/cache /var/www/html/src/log /var/www/html/src/config /var/www/html/lib/confs; \
+	chown -R www-data:www-data /var/www/html/src/cache /var/www/html/src/log /var/www/html/src/config /var/www/html/lib/confs /var/www/html/var/session; \
 	chmod -R 775 /var/www/html/src/cache /var/www/html/src/log /var/www/html/src/config;
 RUN cd /var/www/html/src && composer install && composer dump-autoload
 
