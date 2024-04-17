@@ -61,9 +61,13 @@ class AttendanceCorrectionService
             ->getAttendanceRecords($attendanceRecordSearchFilterParams);
     }
 
-    public function runCorrection()
+    public function runCorrection(?DateTime $date = null)
     {
-        $today = new DateTime();
+        if (!$date) {
+            $today = new DateTime();
+        } else if ($date instanceof DateTime) {
+            $today = $date;
+        }
         $isHoliday = $this->getHolidayService()->isHoliday($today);
         $isWeekend = $this->isWeekend($today);
 
@@ -83,12 +87,12 @@ class AttendanceCorrectionService
         //$messages[] = $this->checkEmployeesBreak();
         //$messages[] = $this->checkEmployeesAttendance();
 
-        $messages[] = $this->getAutomaticAttendanceCandidatesAndExecute();
+        $messages[] = $this->getAutomaticAttendanceCandidatesAndExecute($date ?? null);
 
         return $messages;
     }
 
-    private function getAutomaticAttendanceCandidatesAndExecute()
+    private function getAutomaticAttendanceCandidatesAndExecute(?DateTime $date = null)
     {
         $result = new \stdClass();
         $result->success = array(["Employees that has been automatically punched in and out"]);
@@ -116,13 +120,13 @@ class AttendanceCorrectionService
                     );
                 }
 
+                $currentDateStart = $date ? clone $date->setTime(0,0,0) : new DateTime('today midnight');
+                $currentDateEnd = $date ? clone $date->modify('+1 day')->modify('-1 second') : new DateTime('today 23:59:59');
 
-                $todayStart = new DateTime('today midnight');
-                $todayEnd = new DateTime('today 23:59:59');
                 $attendanceRecordSearchParams = new AttendanceRecordSearchFilterParams();
                 $attendanceRecordSearchParams->setEmployeeNumbers([$empNumber]);
-                $attendanceRecordSearchParams->setFromDate($todayStart);
-                $attendanceRecordSearchParams->setToDate($todayEnd);
+                $attendanceRecordSearchParams->setFromDate($currentDateStart);
+                $attendanceRecordSearchParams->setToDate($currentDateEnd);
                 $recordExists = $this->getAttendanceService()->getAttendanceDao()->getAttendanceRecordList($attendanceRecordSearchParams);
 
                 if ($recordExists && count($recordExists) > 0) {
@@ -131,7 +135,7 @@ class AttendanceCorrectionService
                 }
 
                 if ($employee && !$leave) {
-                    $result->success[1][] = $this->handleAutomaticAttendance($employee);
+                    $result->success[1][] = $this->handleAutomaticAttendance($employee, $date);
                 }
 
 
@@ -141,20 +145,22 @@ class AttendanceCorrectionService
     }
 
 
-    private function handleAutomaticAttendance(Employee $employee)
+    private function handleAutomaticAttendance(Employee $employee, ?DateTime $date = null)
     {
 
         // Work Record
+
+        $currentDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
 
 
         $workRecordBeforeBreak = new AttendanceRecord();
         $workRecordBeforeBreak->setEmployee($employee);
         $workRecordBeforeBreak->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
         $workRecordBeforeBreak->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $workRecordBeforeBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 8:00:00'));
-        $workRecordBeforeBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
-        $workRecordBeforeBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 6:00:00')); // -2 because UTC
-        $workRecordBeforeBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00')); // -2 because UTC
+        $workRecordBeforeBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 8:00:00'));
+        $workRecordBeforeBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 11:30:00'));
+        $workRecordBeforeBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 6:00:00')); // -2 because UTC
+        $workRecordBeforeBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 9:30:00')); // -2 because UTC
         $workRecordBeforeBreak->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
         $workRecordBeforeBreak->setPunchInTimezoneName(self::TIMEZONE);
         $workRecordBeforeBreak->setPunchOutTimezoneName(self::TIMEZONE);
@@ -166,10 +172,10 @@ class AttendanceCorrectionService
         $workRecordAfterBreak->setEmployee($employee);
         $workRecordAfterBreak->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
         $workRecordAfterBreak->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $workRecordAfterBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
-        $workRecordAfterBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 16:00:00'));
-        $workRecordAfterBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 10:00:00')); // -2 because UTC
-        $workRecordAfterBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 14:00:00')); // -2 because UTC
+        $workRecordAfterBreak->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 12:00:00'));
+        $workRecordAfterBreak->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 16:00:00'));
+        $workRecordAfterBreak->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 10:00:00')); // -2 because UTC
+        $workRecordAfterBreak->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 14:00:00')); // -2 because UTC
         $workRecordAfterBreak->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_WORK_TIME);
         $workRecordAfterBreak->setPunchInTimezoneName(self::TIMEZONE);
         $workRecordAfterBreak->setPunchOutTimezoneName(self::TIMEZONE);
@@ -182,10 +188,10 @@ class AttendanceCorrectionService
         $breakRecord->setEmployee($employee);
         $breakRecord->setPunchInTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
         $breakRecord->setPunchOutTimeOffset('+2:00'); // Support EU/Ljubljana TZ only for now. Will implement timezones if needed
-        $breakRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 11:30:00'));
-        $breakRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 12:00:00'));
-        $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 9:30:00')); // -2 because UTC
-        $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', date('Y-m-d') . ' 10:00:00')); // -2 because UTC
+        $breakRecord->setPunchInUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 11:30:00'));
+        $breakRecord->setPunchOutUtcTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 12:00:00'));
+        $breakRecord->setPunchInUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 9:30:00')); // -2 because UTC
+        $breakRecord->setPunchOutUserTime($this->getDateWithTimeZone('Y-m-d H:i:s', $currentDate . ' 10:00:00')); // -2 because UTC
         $breakRecord->setAttendanceType(AttendanceRecord::ATTENDANCE_TYPE_BREAK_TIME);
         $breakRecord->setPunchInTimezoneName(self::TIMEZONE);
         $breakRecord->setPunchOutTimezoneName(self::TIMEZONE);
