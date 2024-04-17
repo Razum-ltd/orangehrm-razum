@@ -1,6 +1,8 @@
-In order to debug code with xdebug add the following lines to 
-`/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini`
+In order to debug code with xdebug:
 
+1. Uncomment xdebug line in dockerfile and rebuild the image
+
+2 .add the following lines to `/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini`:
 zend_extension=xdebug
 xdebug.mode=debug
 xdebug.start_with_request=yes
@@ -9,7 +11,7 @@ xdebug.client_host=<your local machine ip>
 xdebug.discover_client_host=true
 xdebug.client_port=9003
 
-For vscode download xdebug extension and add a entry to launch.json
+3. For vscode download xdebug extension and add a entry to launch.json
 
     {
         "name": "Listen for Xdebug",
