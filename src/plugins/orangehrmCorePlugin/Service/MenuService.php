@@ -31,6 +31,7 @@ use OrangeHRM\Core\Traits\UserRoleManagerTrait;
 use OrangeHRM\Entity\MenuItem;
 use OrangeHRM\Entity\Screen;
 use OrangeHRM\I18N\Traits\Service\I18NHelperTrait;
+use OrangeHRM\Pim\Traits\Service\EmployeeServiceTrait;
 
 class MenuService
 {
@@ -38,6 +39,7 @@ class MenuService
     use ModuleScreenHelperTrait;
     use AuthUserTrait;
     use I18NHelperTrait;
+    use EmployeeServiceTrait;
 
     public const CORE_MENU_SIDE_PANEL_CACHE_KEY = 'core.menu.side_panel';
     public const CORE_MENU_TOP_RIBBON_CACHE_KEY = 'core.menu.top_ribbon';
@@ -181,16 +183,17 @@ class MenuService
 
         foreach ($detailedSidePanelMenuItems as $detailedSidePanelMenuItem) {
             $active = false;
-            if (is_null($selectedSidePanelMenuId) && $active = $this->isActiveSidePanelMenuItem(
-                $detailedSidePanelMenuItem,
-                $currentModuleAndScreen,
-                $configuratorMenuItems
-            )) {
+            if (
+                is_null($selectedSidePanelMenuId) && $active = $this->isActiveSidePanelMenuItem(
+                    $detailedSidePanelMenuItem,
+                    $currentModuleAndScreen,
+                    $configuratorMenuItems
+                )
+            ) {
                 $selectedSidePanelMenuId = $detailedSidePanelMenuItem->getId();
             }
             $normalizedSidePanelMenuItems[] = $this->normalizeMenuItem($detailedSidePanelMenuItem, $baseUrl, $active);
         }
-
         $normalizedTopMenuItems = [];
         if (!is_null($selectedSidePanelMenuId)) {
             $topMenuItems = $this->getTopMenuItemsAlongWithCache($selectedSidePanelMenuId);
@@ -283,8 +286,10 @@ class MenuService
             'url' => $url,
         ];
 
-        if (!is_null($detailedMenuItem->getAdditionalParams()) &&
-            isset($detailedMenuItem->getAdditionalParams()['icon'])) {
+        if (
+            !is_null($detailedMenuItem->getAdditionalParams()) &&
+            isset($detailedMenuItem->getAdditionalParams()['icon'])
+        ) {
             $menuItem = array_merge($menuItem, $detailedMenuItem->getAdditionalParams());
         }
 
@@ -311,10 +316,21 @@ class MenuService
         $active = $this->isActiveTopMenuItem($detailedMenuItem, $currentModuleAndScreen, $configuratorMenuItems);
         $menuItem = $this->normalizeMenuItem($detailedMenuItem, $baseUrl, $active);
         $leaf ?: $menuItem['children'] = [];
+        $employeeHasAutomaticPunchEnabled = $this->getEmployeeService()
+            ->getEmployeeByEmpNumber(
+                $this->getAuthUser()->getEmpNumber()
+            )
+            ->getAutomaticPunchOut();
 
         // if sub menu item exists
         if (!empty($detailedMenuItem->getChildMenuItems())) {
             foreach ($detailedMenuItem->getChildMenuItems() as $subItem) {
+
+                // Punch In/Out menu id is 58, perhaps there is a better way to get it instead of hardcoding?
+                if ($employeeHasAutomaticPunchEnabled === 1 && $subItem->getId() === 58) { 
+                    continue;
+                }
+
                 $active = $this->isActiveTopMenuItem(
                     $subItem,
                     $currentModuleAndScreen,
