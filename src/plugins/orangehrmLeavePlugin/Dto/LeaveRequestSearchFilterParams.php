@@ -80,6 +80,8 @@ class LeaveRequestSearchFilterParams extends DateRangeSearchFilterParams
      */
     private ?string $includeEmployees = self::INCLUDE_EMPLOYEES_ONLY_CURRENT;
 
+    private ?int $disableMonthOverlap = null;
+
     public function __construct()
     {
         $this->setSortField('leave.date');
@@ -187,5 +189,14 @@ class LeaveRequestSearchFilterParams extends DateRangeSearchFilterParams
     public function setIncludeEmployees(?string $includeEmployees): void
     {
         $this->includeEmployees = $includeEmployees;
+    }
+
+    public function setDisableMonthOverlap(?int $disableMonthOverlap): void
+    {
+        $this->disableMonthOverlap = $disableMonthOverlap;
+    }
+
+    public function getDisableMonthOverlap(): ?int {
+        return $this->disableMonthOverlap;
     }
 }

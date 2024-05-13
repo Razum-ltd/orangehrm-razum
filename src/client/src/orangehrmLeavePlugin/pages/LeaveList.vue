@@ -85,6 +85,13 @@
                   {{ $t('leave.include_past_employees') }}
                 </oxd-text>
                 <oxd-switch-input v-model="filters.includePastEmps" />
+
+                <oxd-grid-item class="orangehrm-leave-filter --span-column-2">
+                  <oxd-text class="orangehrm-leave-filter-text" tag="p">
+                    Disable month overlap
+                  </oxd-text>
+                  <oxd-switch-input v-model="filters.disableMonthOverlap" />
+                </oxd-grid-item>
               </oxd-grid-item>
             </oxd-grid>
           </oxd-form-row>

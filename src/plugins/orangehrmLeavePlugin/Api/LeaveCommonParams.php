@@ -32,4 +32,5 @@ final class LeaveCommonParams
     public const PARAMETER_DURATION_TYPE = 'type';
     public const PARAMETER_DURATION_FROM_TIME = 'fromTime';
     public const PARAMETER_DURATION_TO_TIME = 'toTime';
+    public const PARAMETER_DISABLE_MONTH_OVERLAP = "disableMonthOverlap";
 }

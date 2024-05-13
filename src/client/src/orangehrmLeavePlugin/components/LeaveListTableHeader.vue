@@ -46,10 +46,14 @@
     <oxd-text v-else tag="span">
       {{ $t('general.n_records_found', {count: total}) }}
     </oxd-text>
+    <!--TODO: implement export-->
+    <oxd-button @click="onExport" label="Export to CSV" />
   </div>
 </template>
 
 <script>
+// TODO: Implement export to csv
+import {formatDate, parseDate} from '@ohrm/core/util/helper/datefns';
 export default {
   name: 'LeaveListTableHeader',
 
@@ -71,9 +75,29 @@ export default {
       required: false,
       default: () => ({}),
     },
+    data: {
+      type: Object,
+      required: false,
+      default: () => ({}),
+    },
   },
 
   emits: ['onActionClick'],
+
+  methods: {
+    onExport() {
+      const exportData = JSON.parse(JSON.stringify(this.data)).map((item) => {
+        return {
+          employee: item.employeeName,
+          dateFrom: new Date(item.date).toLocaleDateString('sl'),
+          dateTo: new Date(item.date).toLocaleDateString('sl'),
+          leaveType: item.leaveType,
+          status: item.status,
+        };
+      });
+      console.log(exportData);
+    },
+  },
 };
 </script>
 
