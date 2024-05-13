@@ -105,15 +105,22 @@ export default {
 
     onExport() {
       const exportData = JSON.parse(JSON.stringify(this.data)).map((item) => {
-        // The date format is "dateFrom to dateTo" hence the string manipulation
-        const dateFrom = parseDate(
-          item.date.split('to')[0].replace(' ', ''),
-          'dd-MM-yyyy',
-        );
-        const dateTo = parseDate(
-          item.date.split('to')[1].replace(' ', ''),
-          'dd-MM-yyyy',
-        );
+        // The date format is either string date (if only one day) or "dateFrom to dateTo" hence the string manipulation
+        let dateFrom;
+        let dateTo;
+        if (item.date.includes('to')) {
+          dateFrom = parseDate(
+            item.date.split('to')[0].replace(' ', ''),
+            'dd-MM-yyyy',
+          );
+          dateTo = parseDate(
+            item.date.split('to')[1].replace(' ', ''),
+            'dd-MM-yyyy',
+          );
+        } else {
+          dateFrom = parseDate(item.date, 'dd-MM-yyyy');
+          dateTo = parseDate(item.date, 'dd-MM-yyyy');
+        }
 
         return {
           employee: item.employeeName,
