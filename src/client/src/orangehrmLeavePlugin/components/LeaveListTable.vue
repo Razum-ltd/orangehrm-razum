@@ -85,7 +85,7 @@ import LeaveBulkActionModal from '@/orangehrmLeavePlugin/components/LeaveBulkAct
 import LeaveListTableHeader from '@/orangehrmLeavePlugin/components/LeaveListTableHeader';
 import usei18n from '@/core/util/composable/usei18n';
 import useDateFormat from '@/core/util/composable/useDateFormat';
-import {formatDate, parseDate, startOfMonth} from '@/core/util/helper/datefns';
+import {formatDate, parseDate} from '@/core/util/helper/datefns';
 import useLocale from '@/core/util/composable/useLocale';
 
 const defaultFilters = {
