@@ -33,6 +33,7 @@
         :total="total"
         :loading="isLoading"
         :bulk-actions="leaveBulkActions"
+        :data="items.data"
         @on-action-click="onLeaveActionBulk"
       >
       </leave-list-table-header>
@@ -95,6 +96,7 @@ const defaultFilters = {
   subunit: null,
   includePastEmps: false,
   leaveType: null,
+  disableMonthOverlap: false,
 };
 
 export default {
@@ -140,6 +142,11 @@ export default {
       required: false,
       default: () => null,
     },
+    disableMonthOverlap: {
+      type: Boolean,
+      required: false,
+      default: () => null,
+    },
   },
 
   setup(props) {
@@ -155,6 +162,9 @@ export default {
           label: `${props.employee.firstName} ${props.employee.middleName} ${props.employee.lastName}`,
           isPastEmployee: props.employee.terminationId,
         },
+        ...(props.disableMonthOverlap && {
+          disableMonthOverlap: 1,
+        }),
       }),
     });
     const checkedItems = ref([]);
@@ -192,6 +202,7 @@ export default {
           : 'onlyCurrent',
         statuses: statuses.map((item) => item.id),
         leaveTypeId: filters.value.leaveType?.id,
+        disableMonthOverlap: filters.value.disableMonthOverlap ? 1 : 0,
       };
     });
 

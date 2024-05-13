@@ -145,6 +145,16 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
             ->getLeaveRequestsCount($leaveRequestSearchFilterParams);
         $detailedLeaveRequests = $this->getLeaveRequestService()->getDetailedLeaveRequests($leaveRequests);
 
+        $disableOverlap = $this->getRequestParams()->getBooleanOrNull(
+            RequestParams::PARAM_TYPE_QUERY,
+            LeaveCommonParams::PARAMETER_DISABLE_MONTH_OVERLAP
+        );
+
+        if ($disableOverlap) {
+            self::normalizeOverlappingMonth($detailedLeaveRequests, $leaveRequestSearchFilterParams);
+        }
+
+
         return new EndpointCollectionResult(
             LeaveRequestDetailedModel::class,
             $detailedLeaveRequests,
@@ -154,6 +164,39 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
                 ]
             )
         );
+    }
+
+    /**
+     * Normalize detailed leave requests - return leaves within filtered dateFrom and dateTo
+     * @param DetailedLeaveRequest[] $detailedLeaveRequest
+     * @param LeaveRequestSearchFilterParams $leaveRequestSearchFilterParams
+     */
+    public function normalizeOverlappingMonth($detailedLeaveRequest, $filters)
+    {
+        if (!is_array($detailedLeaveRequest) && !($detailedLeaveRequest instanceof Traversable)) {
+            return $detailedLeaveRequest;
+        }
+
+        foreach ($detailedLeaveRequest as &$leaveRequest) {
+            if (!$leaveRequest instanceof DetailedLeaveRequest)
+                return $detailedLeaveRequest;
+
+            // Check if the dates are overlapping the selected date range
+            $leaves = $leaveRequest->getLeaves();
+
+            if (!is_array($leaves))
+                return $detailedLeaveRequest;
+
+            foreach ($leaves as $index => $leave) {
+                if ($leave->getDate() < $filters->getFromDate() || $leave->getDate() > $filters->getToDate()) {
+                    unset($leaves[$index]);
+                }
+            }
+            if (count($leaves) > 0)
+                $leaveRequest->setLeaves($leaves);
+        }
+
+        return $detailedLeaveRequest;
     }
 
     /**
@@ -203,6 +246,13 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
                 LeaveCommonParams::PARAMETER_LEAVE_TYPE_ID
             )
         );
+        $leaveRequestSearchFilterParams->setDisableMonthOverlap(
+            $this->getRequestParams()->getBooleanOrNull(
+                RequestParams::PARAM_TYPE_QUERY,
+                LeaveCommonParams::PARAMETER_DISABLE_MONTH_OVERLAP
+            )
+        );
+
         return $leaveRequestSearchFilterParams;
     }
 
@@ -277,6 +327,12 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
                     )
                 )
             ),
+            $this->getValidationDecorator()->notRequiredParamRule(
+                new ParamRule(
+                    LeaveCommonParams::PARAMETER_DISABLE_MONTH_OVERLAP,
+                    new Rule(Rules::NUMBER)
+                )
+            ),
             ...$this->getSortingAndPaginationParamsRules(LeaveRequestSearchFilterParams::ALLOWED_SORT_FIELDS)
         );
         $fromDateRule = new ParamRule(
@@ -285,7 +341,7 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
             new Rule(
                 Rules::LESS_THAN_OR_EQUAL,
                 [
-                    fn () => $this->getRequestParams()->getDateTimeOrNull(
+                    fn() => $this->getRequestParams()->getDateTimeOrNull(
                         RequestParams::PARAM_TYPE_QUERY,
                         LeaveCommonParams::PARAMETER_TO_DATE
                     )
