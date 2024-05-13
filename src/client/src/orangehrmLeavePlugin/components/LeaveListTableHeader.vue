@@ -46,14 +46,12 @@
     <oxd-text v-else tag="span">
       {{ $t('general.n_records_found', {count: total}) }}
     </oxd-text>
-    <!--TODO: implement export-->
-    <oxd-button @click="onExport" label="Export to CSV" />
+    <oxd-button label="Export to CSV" @click="onExport" />
   </div>
 </template>
 
 <script>
-// TODO: Implement export to csv
-import {formatDate, parseDate} from '@ohrm/core/util/helper/datefns';
+import {parseDate, formatDate} from '@ohrm/core/util/helper/datefns';
 export default {
   name: 'LeaveListTableHeader',
 
@@ -85,17 +83,51 @@ export default {
   emits: ['onActionClick'],
 
   methods: {
+    convertToCSV(data) {
+      const headerRow = Object.keys(data[0]);
+      const csvRows = data.map((item) =>
+        headerRow.map((key) => (item[key] ? item[key] : '')),
+      );
+      const csvString = [headerRow.join(',')]
+        .concat(csvRows.map((row) => row.join(',')))
+        .join('\n');
+      return csvString;
+    },
+
+    downloadCSV(csvContent, filename) {
+      const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8'});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    },
+
     onExport() {
       const exportData = JSON.parse(JSON.stringify(this.data)).map((item) => {
+        // The date format is "dateFrom to dateTo" hence the string manipulation
+        const dateFrom = parseDate(
+          item.date.split('to')[0].replace(' ', ''),
+          'dd-MM-yyyy',
+        );
+        const dateTo = parseDate(
+          item.date.split('to')[1].replace(' ', ''),
+          'dd-MM-yyyy',
+        );
+
         return {
           employee: item.employeeName,
-          dateFrom: new Date(item.date).toLocaleDateString('sl'),
-          dateTo: new Date(item.date).toLocaleDateString('sl'),
+          dateFrom: formatDate(dateFrom, 'd.M.yyyy'),
+          dateTo: formatDate(dateTo, 'd.M.yyyy'),
           leaveType: item.leaveType,
           status: item.status,
         };
       });
-      console.log(exportData);
+      const csvContent = this.convertToCSV(exportData);
+      this.downloadCSV(
+        csvContent,
+        `leave_report_${formatDate(new Date(), 'dd-MM-yyyy')}.csv`,
+      );
     },
   },
 };
