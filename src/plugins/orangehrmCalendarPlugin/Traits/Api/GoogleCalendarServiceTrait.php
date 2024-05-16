@@ -19,17 +19,26 @@ trait GoogleCalendarServiceTrait
     private function getClient(): Google_Client
     {
         try {
+
+
+            $dir = __DIR__;
+            $keyFilePath = $dir . '/../../config/credentials.json';
+            putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $keyFilePath);
+
             $client = new Google_Client();
-            $client->setApplicationName("Orange HRM");
-            $client->setAccessType('offline');
+            $client->setApplicationName('Orange HRM');
             $client->setIncludeGrantedScopes(true);
-            $client->addScope([
+            $client->setAccessType("offline");
+            // TODO create and change to generic razum mail to use services connected to that service account
+            $client->setSubject("rok.first@razum.si");
+            $client->setScopes([
                 \Google_Service_Calendar::CALENDAR,
                 \Google_Service_Calendar::CALENDAR_EVENTS,
+                \Google_Service_Calendar::CALENDAR_READONLY
             ]);
-            $client->setSubject('klemen.komel@razum.si'); // for impresonating a user - must have a domain wide delegation set-up
-            // Change the credentials.json file for a different service account
-            $client->setAuthConfig(__DIR__ . '/../../config/credentials.json');
+
+            $config = json_decode(file_get_contents(getenv("GOOGLE_APPLICATION_CREDENTIALS")), true);
+            $client->setAuthConfig($config);
             return $client;
         } catch (Exception $e) {
             throw new Exception("Error creating Google Client: " . $e->getMessage());
