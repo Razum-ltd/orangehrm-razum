@@ -23,7 +23,6 @@ trait GoogleCalendarServiceTrait
 
             $dir = __DIR__;
             $keyFilePath = $dir . '/../../config/credentials.json';
-            putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $keyFilePath);
 
             $client = new Google_Client();
             $client->setApplicationName('Orange HRM');
@@ -36,8 +35,8 @@ trait GoogleCalendarServiceTrait
                 \Google_Service_Calendar::CALENDAR_EVENTS,
                 \Google_Service_Calendar::CALENDAR_READONLY
             ]);
-
-            $config = json_decode(file_get_contents(getenv("GOOGLE_APPLICATION_CREDENTIALS")), true);
+            // For local development:  $config = json_decode(file_get_contents($keyFilePath), true);
+            $config = json_decode((getenv("GOOGLE_APPLICATION_CREDENTIALS")), true);
             $client->setAuthConfig($config);
             return $client;
         } catch (Exception $e) {
