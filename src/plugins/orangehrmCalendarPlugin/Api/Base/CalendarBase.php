@@ -14,7 +14,13 @@ class CalendarBase
 {
     use GoogleCalendarServiceTrait;
 
-    public const CALENDAR_ID = getenv("GOOGLE_CALENDAR_ID") ?? "c_9bc45589782292eccf2f43aa5d932708c127bd6943c2a89de7d3b90a7fbf285f@group.calendar.google.com";
+    private string $calendarId;
+
+
+    public function __construct()
+    {
+        $this->calendarId = getenv("GOOGLE_CALENDAR_ID");
+    }
 
     public const EVENT_TIME_FORMAT = "H:i:s";
 
@@ -53,8 +59,6 @@ class CalendarBase
 
         $htmlLink = Config::PRODUCT_MODE === Config::MODE_PROD ? "https://hrm.dev.razum.si" : "http://localhost:8000/web/index.php/leave/viewLeaveRequest/" . $leaveRequest->getId();
 
-        $calendarId = self::CALENDAR_ID;
-
         $event = new \Google_Service_Calendar_Event();
 
         $event->setId(self::EVENT_ID_PREFIX . $leaveRequest->getId());
@@ -71,7 +75,7 @@ class CalendarBase
         $event->setVisibility("public");
 
         try {
-            $newEvent = $this->getCalendarService()->events->insert($calendarId, $event);
+            $newEvent = $this->getCalendarService()->events->insert($this->calendarId, $event);
         } catch (\Google_Service_Exception $e) {
             return $e;
         }
@@ -93,11 +97,10 @@ class CalendarBase
         if (!$id)
             return;
 
-        $calendarId = self::CALENDAR_ID;
         $eventId = self::EVENT_ID_PREFIX . $id;
 
         try {
-            $this->getCalendarService()->events->delete($calendarId, $eventId);
+            $this->getCalendarService()->events->delete($this->calendarId, $eventId);
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }

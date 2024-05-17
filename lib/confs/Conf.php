@@ -7,6 +7,8 @@ class Conf {
     private string $dbName;
     private string $dbUser;
     private string $dbPass;
+    private string $googleCalendarId;
+    private string $googleApplicationCredentials;
 
     public function __construct() {
         $this->dbHost = getenv('ORANGEHRM_DATABASE_HOST');
@@ -14,6 +16,8 @@ class Conf {
         $this->dbName = getenv('ORANGEHRM_DATABASE_NAME');
         $this->dbUser = getenv('ORANGEHRM_DATABASE_USER');
         $this->dbPass = getenv('ORANGEHRM_DATABASE_PASSWORD');
+        $this->googleCalendarId = getenv('GOOGLE_CALENDAR_ID');
+        $this->googleApplicationCredentials = getenv('GOOGLE_APPLICATION_CREDENTIALS');
     }
 
     public function getDbHost(): string {
@@ -34,6 +38,14 @@ class Conf {
 
     public function getDbPass(): string {
         return $this->dbPass;
+    }
+
+    public function getGoogleCalendarId(): string {
+        return $this->googleCalendarId;
+    }
+
+    public function getGoogleApplicationCredentials(): string {
+        return $this->googleApplicationCredentials;
     }
 
 }
