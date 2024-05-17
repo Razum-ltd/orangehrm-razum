@@ -51,3 +51,13 @@ Submit your help requests through [OrangeHRM Help Portal](https://starterhelp.or
 
 ## License 
 GNU General Public License
+
+
+### Google Services setup
+This implementation uses Service Accounts for authorization.
+
+You need to provide the serialized JSON to env variable "GOOGLE_APPLICATION_CREDENTIALS. 
+You can download the credentials.json from the Keys tab in service account on google console api. 
+Serialize the JSON and remove private_key field and save it somewhere.
+
+Add the serialized private_key the GOOGLE_PRIVATE_KEY env variable. 

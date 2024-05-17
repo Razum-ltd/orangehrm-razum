@@ -9,6 +9,7 @@ class Conf {
     private string $dbPass;
     private string $googleCalendarId;
     private string $googleApplicationCredentials;
+    private string $googlePrivateKey;
 
     public function __construct() {
         $this->dbHost = getenv('ORANGEHRM_DATABASE_HOST');
@@ -18,6 +19,7 @@ class Conf {
         $this->dbPass = getenv('ORANGEHRM_DATABASE_PASSWORD');
         $this->googleCalendarId = getenv('GOOGLE_CALENDAR_ID');
         $this->googleApplicationCredentials = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+        $this->googlePrivateKey = getenv("GOOGLE_PRIVATE_KEY");
     }
 
     public function getDbHost(): string {
@@ -46,6 +48,10 @@ class Conf {
 
     public function getGoogleApplicationCredentials(): string {
         return $this->googleApplicationCredentials;
+    }
+
+    public function getGooglePrivateKey(): string {
+        return $this->googlePrivateKey;
     }
 
 }

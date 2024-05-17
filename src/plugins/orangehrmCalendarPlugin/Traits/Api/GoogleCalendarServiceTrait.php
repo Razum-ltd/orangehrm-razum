@@ -35,10 +35,15 @@ trait GoogleCalendarServiceTrait
                 \Google_Service_Calendar::CALENDAR_EVENTS,
                 \Google_Service_Calendar::CALENDAR_READONLY
             ]);
-            // For local development:  $config = json_decode(file_get_contents($keyFilePath), true);
+            // For local development
+            // $localConfig =  json_decode(file_get_contents($keyFilePath), true);
+
             $config = json_decode((getenv("GOOGLE_APPLICATION_CREDENTIALS")), true);
+            $config["private_key"] = getenv("GOOGLE_PRIVATE_KEY");
+            $config['private_key'] = str_replace("\\n", "\n", $config['private_key']);
             $client->setAuthConfig($config);
             return $client;
+            
         } catch (Exception $e) {
             throw new Exception("Error creating Google Client: " . $e->getMessage());
         }
