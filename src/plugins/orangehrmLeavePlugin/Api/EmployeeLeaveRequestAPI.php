@@ -19,6 +19,7 @@
 
 namespace OrangeHRM\Leave\Api;
 
+use OrangeHRM\Calendar\Api\Base\CalendarBase;
 use OrangeHRM\Core\Api\CommonParams;
 use OrangeHRM\Core\Api\V2\CrudEndpoint;
 use OrangeHRM\Core\Api\V2\Endpoint;
@@ -445,6 +446,16 @@ class EmployeeLeaveRequestAPI extends Endpoint implements CrudEndpoint
 
         $workflow = $detailedLeaveRequest->getWorkflowForAction($action);
         $this->getLeaveRequestService()->changeLeaveRequestStatus($detailedLeaveRequest, $workflow);
+
+
+
+        if ($action === "APPROVE") {
+            $googleCalendar = new CalendarBase();
+            $googleCalendar->createEvent($leaveRequest);
+        } else if ($action === "CANCEL") {
+            $googleCalendar = new CalendarBase();
+            $googleCalendar->deleteEvent($leaveRequest);
+        }
 
         $model = $this->getRequestParams()->getString(
             RequestParams::PARAM_TYPE_QUERY,
