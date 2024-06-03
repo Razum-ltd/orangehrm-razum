@@ -57,7 +57,9 @@ class CalendarBase
             $leaves[] = $leave;
         }
 
-        $htmlLink = Config::PRODUCT_MODE === Config::MODE_PROD ? "https://hrm.dev.razum.si" : "http://localhost:8000/web/index.php/leave/viewLeaveRequest/" . $leaveRequest->getId();
+        // Local dev =  "http://localhost:8000/web/index.php/leave/viewLeaveRequest/"
+        //$htmlLink = Config::PRODUCT_MODE === Config::MODE_PROD ? "https://hrm.dev.razum.si" : "http://localhost:8000/web/index.php/leave/viewLeaveRequest/" . $leaveRequest->getId();
+        $htmlLink = "https://hrm.dev.razum.si/" . $leaveRequest->getId();
 
         $event = new \Google_Service_Calendar_Event();
 
