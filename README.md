@@ -61,3 +61,16 @@ You can download the credentials.json from the Keys tab in service account on go
 Serialize the JSON and remove private_key field and save it somewhere.
 
 Add the serialized private_key the GOOGLE_PRIVATE_KEY env variable. 
+
+
+The desired calendar is set by GOOGLE_CALENDAR_ID env variable.
+
+
+## ! Important !
+
+When redeploying the app via portainer, it is necessary to re-run cron service after container is rebuilt.
+Otherwise the crontab will not work. After the stack is successfully rebuilt, go to orangehrm container on
+portianer, go to console and execute
+```console
+$ service cron start
+```
