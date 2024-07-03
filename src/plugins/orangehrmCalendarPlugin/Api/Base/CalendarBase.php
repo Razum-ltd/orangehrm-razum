@@ -64,7 +64,8 @@ class CalendarBase
         $event = new \Google_Service_Calendar_Event();
 
         $event->setId(self::EVENT_ID_PREFIX . $leaveRequest->getId());
-        $event->setColorId('6');
+        //Graphite, check https://google-calendar-simple-api.readthedocs.io/en/latest/colors.html
+        $event->setColorId('8');
         $event->setSummary(self::normalizeEventName($leaveRequest));
         $event->setDescription("Tip: {$leave->getLeaveType()->getName()}
             Za: {$leave->getEmployee()->getFirstName()} {$leave->getEmployee()->getLastName()}
