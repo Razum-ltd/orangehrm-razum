@@ -65,6 +65,8 @@ Add the serialized private_key the GOOGLE_PRIVATE_KEY env variable.
 
 The desired calendar is set by GOOGLE_CALENDAR_ID env variable.
 
+Calendar user (author) is set by GOOGLE_SUBJECT_EMAIL env variable.
+
 
 ## ! Important !
 

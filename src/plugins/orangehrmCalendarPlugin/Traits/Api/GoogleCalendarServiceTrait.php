@@ -28,8 +28,10 @@ trait GoogleCalendarServiceTrait
             $client->setApplicationName('Orange HRM');
             $client->setIncludeGrantedScopes(true);
             $client->setAccessType("offline");
-            // TODO create and change to generic razum mail to use services connected to that service account
-            $client->setSubject("rok.first@razum.si");
+            $subject = getenv('GOOGLE_SUBJECT_EMAIL');
+            if (!empty($subject)) {
+                $client->setSubject($subject);
+            }
             $client->setScopes([
                 \Google_Service_Calendar::CALENDAR,
                 \Google_Service_Calendar::CALENDAR_EVENTS,
