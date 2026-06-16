@@ -24,7 +24,11 @@ class CalendarBase
 
     public const EVENT_TIME_FORMAT = "H:i:s";
 
-    public const TIMEZONE = "+02:00";
+    public const DST_TIME_FORMAT = "I";
+
+    public const DST_TIMEZONE = "+02:00";
+
+    public const TIMEZONE = "+01:00";
 
     /**
      * Characters allowed in the ID are those used in base32hex encoding, i.e. lowercase letters a-v and digits 0-9, see section 3.1.2 in RFC2938
@@ -139,10 +143,20 @@ class CalendarBase
              * */
             if ($start) {
                 $leaveStartTime = $leave->getStartTime()->format(self::EVENT_TIME_FORMAT);
-                $eventDate->setDateTime($leaveDate . "T" . $leaveStartTime . self::TIMEZONE);
+                $isDST = $leave->getStartTime()->format(self::DST_TIME_FORMAT);
+                $timezone = self::TIMEZONE;
+                if ($isDST) {
+                    $timezone = self::DST_TIMEZONE;
+                }
+                $eventDate->setDateTime($leaveDate . "T" . $leaveStartTime . $timezone);
             } else {
                 $leaveEndTime = $leave->getEndTime()->format(self::EVENT_TIME_FORMAT);
-                $eventDate->setDateTime($leaveDate . "T" . $leaveEndTime . self::TIMEZONE);
+                $isDST = $leave->getEndTime()->format(self::DST_TIME_FORMAT);
+                $timezone = self::TIMEZONE;
+                if ($isDST) {
+                    $timezone = self::DST_TIMEZONE;
+                }
+                $eventDate->setDateTime($leaveDate . "T" . $leaveEndTime . $timezone);
             }
         } else {
             if ($start) {
